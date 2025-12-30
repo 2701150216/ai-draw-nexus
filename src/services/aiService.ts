@@ -2,7 +2,8 @@ import type { PayloadMessage, ChatRequest } from '@/types'
 import { quotaService } from './quotaService'
 
 // API endpoint - can be configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+// 推荐：在 RuoYi 前端走代理时设为 /dev-api/ai；若直连后端则为 /ai
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/dev-api/ai'
 
 /**
  * 获取请求头（包含访问密码和 LLM 配置）

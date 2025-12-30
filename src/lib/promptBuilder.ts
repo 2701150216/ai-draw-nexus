@@ -79,7 +79,7 @@ ${currentCode}
  * Extract code from AI response
  * Handles markdown code blocks and plain text
  */
-export function extractCode(response: string, _engineType: EngineType): string {
+export function extractCode(response: string, engineType: EngineType): string {
   let code = response.trim()
 
   // Remove markdown code blocks if present
@@ -95,6 +95,14 @@ export function extractCode(response: string, _engineType: EngineType): string {
     if (match) {
       code = match[1].trim()
       break
+    }
+  }
+
+  if (engineType === 'mermaid') {
+    const hasMermaidKeyword = /(graph\s+(TD|LR)|flowchart|sequenceDiagram|classDiagram|erDiagram|stateDiagram)/i.test(code)
+    if (!hasMermaidKeyword) {
+      const safe = code.replace(/"/g, "'").replace(/\s+/g, ' ').trim()
+      code = `graph TD\n  A["${safe || 'Generated'}"]`
     }
   }
 
