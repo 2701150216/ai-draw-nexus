@@ -10,7 +10,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "pages:deploy": "pnpm run build && wrangler pages deploy dist"
+    "pages:deploy": "pnpm run build && wrangler pages deploy dist --project-name=ai-draw-nexus"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",
