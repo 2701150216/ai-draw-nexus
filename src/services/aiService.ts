@@ -84,10 +84,9 @@ interface ParseUrlResponse {
 function parseSSELine(line: string): string | null {
   let data = line
 
-  // Handle SSE format (data: prefix, with or without space)
+  // Handle SSE format (data: prefix, with or without trailing space)
   if (line.startsWith('data:')) {
-    data = line.slice(5)
-    if (data.startsWith(' ')) data = data.slice(1)
+    data = line.slice(5).trimStart()
   }
 
   if (data === '[DONE]') return null
@@ -107,9 +106,10 @@ function parseSSELine(line: string): string | null {
       return parsed.text
     }
   } catch {
-    // Not JSON, clean possible duplicated SSE prefixes like "data:xxxdata:yyy"
-    const cleaned = data.replace(/data:/g, ':').replace(/^:+/, '').trim()
-    if (cleaned) return cleaned
+    // Not JSON, return raw data if it has content
+    if (data.trim()) {
+      return data
+    }
   }
   return null
 }
