@@ -1,0 +1,20 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Login banner placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2f6bff" stop-opacity="0.95"/>
+      <stop offset="60%" stop-color="#2c94f5" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#2fd2ff" stop-opacity="0.85"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.06"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <path d="M0 400 Q 200 340 400 420 T 800 380 L 800 600 L 0 600 Z" fill="url(#wave)"/>
+  <path d="M0 120 Q 200 220 400 150 T 800 210 L 800 0 L 0 0 Z" fill="url(#wave)" opacity="0.6"/>
+  <circle cx="140" cy="180" r="18" fill="#ffd166" opacity="0.9"/>
+  <circle cx="210" cy="130" r="10" fill="#ffd166" opacity="0.75"/>
+  <circle cx="620" cy="120" r="12" fill="#90f0ff" opacity="0.8"/>
+  <circle cx="520" cy="480" r="14" fill="#90f0ff" opacity="0.7"/>
+</svg>

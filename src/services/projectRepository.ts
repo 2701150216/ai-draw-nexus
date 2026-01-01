@@ -30,6 +30,39 @@ export const ProjectRepository = {
   },
 
   /**
+   * 保存/更新后端返回的项目（以远端 ID 为主）
+   */
+  async upsertRemote(remote: Partial<Project> & { id: string }, fallback?: Project): Promise<Project> {
+    const now = new Date()
+    const remoteUpdated =
+      remote.updatedAt
+        ? new Date(remote.updatedAt)
+        : (remote as any)['updateTime']
+          ? new Date((remote as any)['updateTime'])
+          : now
+    const remoteCreated =
+      remote.createdAt
+        ? new Date(remote.createdAt)
+        : fallback?.createdAt || now
+    const remoteSyncedAt =
+      remote.remoteSyncedAt
+        ? new Date(remote.remoteSyncedAt)
+        : remoteUpdated
+    const project: Project = {
+      id: remote.id,
+      remoteId: remote.id,
+      title: remote.title || fallback?.title || '未命名',
+      engineType: (remote.engineType as EngineType) || fallback?.engineType || 'mermaid',
+      thumbnail: remote.thumbnail || fallback?.thumbnail || '',
+      createdAt: remoteCreated,
+      updatedAt: remoteUpdated,
+      remoteSyncedAt,
+    }
+    await db.projects.put(project)
+    return project
+  },
+
+  /**
    * Get project by ID
    */
   async getById(id: string): Promise<Project | undefined> {

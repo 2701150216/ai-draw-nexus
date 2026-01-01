@@ -11,6 +11,7 @@ import { ProjectRepository } from '@/services/projectRepository'
 import { VersionRepository } from '@/services/versionRepository'
 import { generateThumbnail } from '@/lib/thumbnail'
 import { useToast } from '@/hooks/useToast'
+import { diagramService } from '@/services/diagramService'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +40,7 @@ export function EditorPage() {
   const titleInputRef = useRef<HTMLInputElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<CanvasAreaRef>(null)
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { success } = useToast()
 
   const { currentProject, currentContent, hasUnsavedChanges, setProject, setContentFromVersion, markAsSaved, reset: resetEditor } = useEditorStore()
@@ -161,6 +163,40 @@ export function EditorPage() {
     }
   }
 
+  // 画布内容变更后自动保存到本地缓存（Dexie），避免未点击保存导致内容丢失
+  useEffect(() => {
+    if (!currentProject) return
+
+    if (autosaveTimer.current) {
+      clearTimeout(autosaveTimer.current)
+    }
+
+    autosaveTimer.current = setTimeout(async () => {
+      try {
+        const latest = await VersionRepository.getLatest(currentProject.id)
+        if (latest) {
+          await VersionRepository.updateLatest(currentProject.id, currentContent)
+        } else {
+          await VersionRepository.create({
+            projectId: currentProject.id,
+            content: currentContent,
+            changeSummary: '自动保存',
+          })
+        }
+        // 更新项目的更新时间，便于列表排序
+        await ProjectRepository.update(currentProject.id, { updatedAt: new Date() })
+      } catch (err) {
+        console.error('Failed to auto-save locally:', err)
+      }
+    }, 1200)
+
+    return () => {
+      if (autosaveTimer.current) {
+        clearTimeout(autosaveTimer.current)
+      }
+    }
+  }, [currentProject, currentContent])
+
   const handleSaveVersion = async () => {
     if (!currentProject?.id || !currentContent) return
 
@@ -178,10 +214,53 @@ export function EditorPage() {
           const thumbnail = await canvasRef.current.getThumbnail()
           if (thumbnail) {
             await ProjectRepository.update(currentProject.id, { thumbnail })
+            // 同步更新本地 project 状态，便于随后保存到后端
+            setProject({ ...currentProject, thumbnail })
           }
         } catch (err) {
           console.error('Failed to generate thumbnail:', err)
         }
+      }
+
+      // 保存到后端 Mongo（按引擎区分字段）
+      try {
+        const payload: any = {
+          id: currentProject.id,
+          title: currentProject.title,
+          engineType: currentProject.engineType,
+          thumbnail: currentProject.thumbnail,
+        }
+        if (currentProject.engineType === 'mermaid') {
+          payload.mermaidContent = currentContent
+        } else if (currentProject.engineType === 'drawio') {
+          payload.drawioXml = currentContent
+        } else if (currentProject.engineType === 'excalidraw') {
+          payload.excalidrawJson = currentContent
+        } else {
+          payload.mermaidContent = currentContent
+        }
+        const saved = await diagramService.save(payload)
+        // 保存成功后将远端数据写回本地（保持 remoteId），并清理旧的本地缓存 ID
+        if (saved?.id) {
+          const savedProject = await ProjectRepository.upsertRemote(
+            {
+              id: saved.id,
+              title: saved.title ?? currentProject.title,
+              engineType: saved.engineType ?? currentProject.engineType,
+              thumbnail: saved.thumbnail ?? currentProject.thumbnail,
+              createdAt: saved.createTime ? new Date(saved.createTime) : currentProject.createdAt,
+              updatedAt: saved.updateTime ? new Date(saved.updateTime) : new Date(),
+            },
+            currentProject
+          )
+          if (currentProject.id !== saved.id) {
+            await ProjectRepository.delete(currentProject.id)
+            navigate(`/editor/${saved.id}`, { replace: true })
+          }
+          setProject(savedProject)
+        }
+      } catch (err) {
+        console.error('Failed to save diagram to backend:', err)
       }
 
       success('版本已保存')

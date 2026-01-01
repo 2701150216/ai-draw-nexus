@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Sparkles, Paperclip, ChevronDown, Plus, Send, Link, X, MoveRight } from 'lucide-react'
 import { Button, Loading } from '@/components/ui'
 import { AppSidebar, AppHeader, CreateProjectDialog } from '@/components/layout'
@@ -10,6 +10,7 @@ import { ProjectRepository } from '@/services/projectRepository'
 import { useChatStore } from '@/stores/chatStore'
 import { aiService } from '@/services/aiService'
 import { useToast } from '@/hooks/useToast'
+import { diagramService } from '@/services/diagramService'
 import {
   fileToBase64,
   parseDocument,
@@ -18,9 +19,11 @@ import {
   SUPPORTED_IMAGE_TYPES,
   SUPPORTED_DOCUMENT_EXTENSIONS,
 } from '@/lib/fileUtils'
+import { getAuthToken } from '@/services/authService'
 
 export function HomePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [prompt, setPrompt] = useState('')
   const [selectedEngine, setSelectedEngine] = useState<EngineType>('mermaid')
   const [isLoading, setIsLoading] = useState(false)
@@ -54,15 +57,78 @@ export function HomePage() {
 
   const loadRecentProjects = async () => {
     try {
-      const projects = await ProjectRepository.getAll()
-      setRecentProjects(projects.slice(0, 5))
+      const [localProjects, remoteRaw] = await Promise.all([
+        ProjectRepository.getAll(),
+        diagramService
+          .list()
+          .catch(() => [] as any[]),
+      ])
+
+      const remoteProjects: Project[] = Array.isArray(remoteRaw)
+        ? remoteRaw.map((doc: any) => {
+            const updatedAt = doc.updateTime ? new Date(doc.updateTime) : new Date()
+            return {
+              id: doc.id,
+              remoteId: doc.id,
+              title: doc.title || '未命名',
+              engineType: doc.engineType || 'mermaid',
+              thumbnail: doc.thumbnail || '',
+              createdAt: doc.createTime ? new Date(doc.createTime) : updatedAt,
+              updatedAt,
+              remoteSyncedAt: updatedAt,
+            }
+          })
+        : []
+
+      // 远端更新时间索引，方便为本地记录补 remoteSyncedAt
+      const remoteSyncMap = new Map<string, Date>()
+      remoteProjects.forEach((p) => {
+        if (p.remoteId) remoteSyncMap.set(p.remoteId, p.remoteSyncedAt || p.updatedAt)
+      })
+
+      // 合并：远端为主，但若本地同一 remoteId 更“新”（未同步改动），则覆盖
+      const mergedMap = new Map<string, Project>()
+      const upsert = (p: Project) => {
+        const baseSync = p.remoteSyncedAt || (p.remoteId ? remoteSyncMap.get(p.remoteId) : undefined)
+        const candidate: Project = baseSync && !p.remoteSyncedAt ? { ...p, remoteSyncedAt: baseSync } : p
+        const key = candidate.remoteId || candidate.id
+        const existing = mergedMap.get(key)
+        if (!existing) {
+          mergedMap.set(key, candidate)
+          return
+        }
+        const isNewer = new Date(candidate.updatedAt).getTime() > new Date(existing.updatedAt).getTime()
+        if (isNewer) {
+          mergedMap.set(key, candidate)
+        }
+      }
+      remoteProjects.forEach(upsert)
+      localProjects.forEach(upsert)
+
+      const merged = Array.from(mergedMap.values()).sort(
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
+
+      setRecentProjects(merged.slice(0, 5))
     } catch (error) {
       console.error('Failed to load projects:', error)
     }
   }
 
+  const isLocalCache = (project: Project) => {
+    if (!project.remoteId) return true
+    if (!project.remoteSyncedAt) return false
+    return new Date(project.updatedAt).getTime() > new Date(project.remoteSyncedAt).getTime()
+  }
+
   const handleQuickStart = async () => {
     if (!prompt.trim()) return
+
+    // 未登录则跳转登录页
+    if (!getAuthToken()) {
+      navigate('/login', { state: { from: location.pathname } })
+      return
+    }
 
     setIsLoading(true)
     try {
@@ -511,8 +577,13 @@ export function HomePage() {
                 <button
                   key={project.id}
                   onClick={() => navigate(`/editor/${project.id}`)}
-                  className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface transition-all hover:border-primary hover:shadow-md"
+                  className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-surface transition-all hover:border-primary hover:shadow-md"
                 >
+                  {isLocalCache(project) && (
+                    <span className="absolute left-2 top-2 rounded border border-amber-200 bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                      本地缓存
+                    </span>
+                  )}
                   <div className="flex h-24 items-center justify-center bg-background">
                     {project.thumbnail ? (
                       <img

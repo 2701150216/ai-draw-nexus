@@ -4,6 +4,14 @@ export type EngineType = 'mermaid' | 'excalidraw' | 'drawio'
 // Project
 export interface Project {
   id: string
+  /**
+   * 后端持久化 ID（Mongo ObjectId 或其他），用于判断是否已同步
+   */
+  remoteId?: string
+  /**
+   * 最近一次成功同步到后端的时间，用于判断“有远端但本地有未同步变更”
+   */
+  remoteSyncedAt?: Date
   title: string
   engineType: EngineType
   thumbnail: string // Base64 string for preview

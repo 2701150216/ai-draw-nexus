@@ -5,6 +5,7 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -17,6 +18,7 @@ export default defineConfig({
       '/dev-api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+        // 若后端无自定义 context-path，则直接去掉前缀；如需自定义请改此处
         rewrite: (p) => p.replace(/^\/dev-api/, ''),
       },
     },

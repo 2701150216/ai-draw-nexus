@@ -16,6 +16,16 @@ import { AppSidebar, AppHeader, CreateProjectDialog, ImportProjectDialog } from 
 import { formatDate } from '@/lib/utils'
 import type { Project } from '@/types'
 import { ProjectRepository } from '@/services/projectRepository'
+import { diagramService } from '@/services/diagramService'
+
+const isLocalCache = (project: Project) => {
+  // 无远端 ID → 本地缓存
+  if (!project.remoteId) return true
+  // 有远端 ID 但还没有同步时间 → 视为已同步
+  if (!project.remoteSyncedAt) return false
+  // 本地更新时间晚于最近同步时间 → 有未同步改动，显示本地缓存
+  return new Date(project.updatedAt).getTime() > new Date(project.remoteSyncedAt).getTime()
+}
 
 export function ProjectsPage() {
   const navigate = useNavigate()
@@ -55,8 +65,59 @@ export function ProjectsPage() {
   const loadProjects = async () => {
     setIsLoading(true)
     try {
-      const data = await ProjectRepository.getAll()
-      setProjects(data)
+      const [localProjects, remoteRaw] = await Promise.all([
+        ProjectRepository.getAll(),
+        diagramService
+          .list()
+          .catch(() => [] as any[]),
+      ])
+
+      const remoteProjects: Project[] = Array.isArray(remoteRaw)
+        ? remoteRaw.map((doc: any) => {
+            const updatedAt = doc.updateTime ? new Date(doc.updateTime) : new Date()
+            return {
+              id: doc.id,
+              remoteId: doc.id,
+              title: doc.title || '未命名',
+              engineType: doc.engineType || 'mermaid',
+              thumbnail: doc.thumbnail || '',
+              createdAt: doc.createTime ? new Date(doc.createTime) : updatedAt,
+              updatedAt,
+              remoteSyncedAt: updatedAt,
+            }
+          })
+        : []
+
+      // 远端更新时间索引，方便为本地记录补 remoteSyncedAt
+      const remoteSyncMap = new Map<string, Date>()
+      remoteProjects.forEach((p) => {
+        if (p.remoteId) remoteSyncMap.set(p.remoteId, p.remoteSyncedAt || p.updatedAt)
+      })
+
+      // 合并：远端为主，但若本地同一 remoteId 更新更晚（未同步改动），则用本地覆盖
+      const mergedMap = new Map<string, Project>()
+      const upsert = (p: Project) => {
+        const baseSync = p.remoteSyncedAt || (p.remoteId ? remoteSyncMap.get(p.remoteId) : undefined)
+        const candidate: Project = baseSync && !p.remoteSyncedAt ? { ...p, remoteSyncedAt: baseSync } : p
+        const key = candidate.remoteId || candidate.id
+        const existing = mergedMap.get(key)
+        if (!existing) {
+          mergedMap.set(key, candidate)
+          return
+        }
+        const isNewer = new Date(candidate.updatedAt).getTime() > new Date(existing.updatedAt).getTime()
+        if (isNewer) {
+          mergedMap.set(key, candidate)
+        }
+      }
+      remoteProjects.forEach(upsert)
+      localProjects.forEach(upsert)
+
+      const merged = Array.from(mergedMap.values()).sort(
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
+
+      setProjects(merged)
     } catch (error) {
       console.error('Failed to load projects:', error)
     } finally {
@@ -172,6 +233,11 @@ export function ProjectsPage() {
                     className="group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-surface transition-all hover:border-primary hover:shadow-md"
                     onClick={() => navigate(`/editor/${project.id}`)}
                   >
+                    {isLocalCache(project) && (
+                      <span className="absolute left-2 top-2 rounded border border-amber-200 bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                        本地缓存
+                      </span>
+                    )}
                     {/* Action Buttons - 右上角 */}
                     <div className="absolute right-2 top-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <Button

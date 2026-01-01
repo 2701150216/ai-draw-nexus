@@ -1,5 +1,6 @@
 import type { PayloadMessage, ChatRequest } from '@/types'
 import { quotaService } from './quotaService'
+import { getAuthToken } from './authService'
 
 // API endpoint - can be configured via environment variable
 // 推荐：在 RuoYi 前端走代理时设为 /dev-api/ai；若直连后端则为 /ai
@@ -11,6 +12,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/dev-api/ai'
 function getHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+  }
+  const token = getAuthToken()
+  if (token) {
+    headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`
   }
   // 优先使用访问密码
   const password = quotaService.getAccessPassword()
@@ -127,6 +132,7 @@ export const aiService = {
     const response = await fetch(`${API_BASE_URL}/chat`, {
       method: 'POST',
       headers: getHeaders(),
+      credentials: 'include',
       body: JSON.stringify(buildRequestBody(messages, false)),
     })
 
@@ -158,6 +164,7 @@ export const aiService = {
     const response = await fetch(`${API_BASE_URL}/chat`, {
       method: 'POST',
       headers: getHeaders(),
+      credentials: 'include',
       body: JSON.stringify(buildRequestBody(messages, true)),
     })
 

@@ -15,8 +15,8 @@ import { validateContent } from '@/lib/validators'
 import { useToast } from '@/hooks/useToast'
 import type { PayloadMessage, EngineType, Attachment, ContentPart } from '@/types'
 
-// Enable streaming by default, can be configured
-const USE_STREAMING = true
+// Enable streaming by default, can be configured (set via Vite env or fallback)
+const USE_STREAMING = (import.meta.env.VITE_USE_STREAMING ?? 'true') === 'true'
 
 // Maximum retry attempts for Mermaid auto-fix
 const MAX_MERMAID_FIX_ATTEMPTS = 3

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { RotateCcw, Clock, ArrowRightToLine } from 'lucide-react'
 import { Button, Loading } from '@/components/ui'
 import { useEditorStore } from '@/stores/editorStore'
+import { clearAuthToken } from '@/services/authService'
 import { VersionRepository } from '@/services/versionRepository'
 import type { VersionHistory } from '@/types'
 
