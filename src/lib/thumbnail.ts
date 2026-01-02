@@ -25,21 +25,39 @@ export async function generateMermaidThumbnail(code: string): Promise<string> {
 }
 
 /**
- * Fix Excalidraw elements with zero dimensions
+ * Fix Excalidraw elements with zero dimensions & sanitize arrow endpoints
  */
-function fixZeroDimensionElements(elements: ExcalidrawElementAny[]): ExcalidrawElementAny[] {
+function normalizeElements(elements: ExcalidrawElementAny[]): ExcalidrawElementAny[] {
   return elements.map(element => {
+    let next = element
+
+    // 
     if (element.type === 'line' || element.type === 'arrow') {
       const needsFix = element.width === 0 || element.height === 0
       if (needsFix) {
-        return {
-          ...element,
-          width: element.width === 0 ? 1 : element.width,
-          height: element.height === 0 ? 1 : element.height,
+        next = {
+          ...next,
+          width: element.width || 1,
+          height: element.height || 1,
         }
       }
     }
-    return element
+
+    // 
+    if (element.type === 'arrow') {
+      const cleanEndpoint = (endpoint: any) => {
+        if (!endpoint) return undefined
+        if (typeof endpoint.id === 'string') return { id: endpoint.id }
+        return undefined
+      }
+      next = {
+        ...next,
+        start: cleanEndpoint((element as any).start),
+        end: cleanEndpoint((element as any).end),
+      }
+    }
+
+    return next
   })
 }
 
@@ -65,8 +83,8 @@ export async function generateExcalidrawThumbnail(jsonContent: string): Promise<
 
     if (elementsData.length === 0) return ''
 
-    // Fix zero dimension elements and restore
-    const fixedElements = fixZeroDimensionElements(elementsData)
+    // Fix zero dimension elements and restore; sanitize invalid endpoints
+    const fixedElements = normalizeElements(elementsData)
     const restoredElements = restoreElements(
       convertToExcalidrawElements(fixedElements),
       null,

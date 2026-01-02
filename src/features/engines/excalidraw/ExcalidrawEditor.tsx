@@ -417,6 +417,7 @@ export const ExcalidrawEditor = forwardRef<ExcalidrawEditorRef, ExcalidrawEditor
           onChange={handleChange}
           excalidrawAPI={(api) => setExcalidrawAPI(api)}
           theme="light"
+          langCode="zh-CN"
           UIOptions={{
             canvasActions: {
               loadScene: false,
