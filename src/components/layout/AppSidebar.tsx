@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Plus } from 'lucide-react'
-import { NAV_ITEMS } from '@/constants'
+import { NAV_LINKS } from '@/constants'
 
 interface AppSidebarProps {
   onCreateProject?: () => void
@@ -25,7 +25,7 @@ export function AppSidebar({ onCreateProject }: AppSidebarProps) {
 
       {/* Navigation Items */}
       <nav className="flex flex-col items-center gap-1">
-        {NAV_ITEMS.map((item, index) => (
+        {NAV_LINKS.map((item, index) => (
           <button
             key={index}
             onClick={() => navigate(item.path)}

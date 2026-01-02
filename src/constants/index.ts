@@ -19,11 +19,10 @@ export const ENGINES: { value: EngineType; label: string }[] = [
   { value: 'drawio', label: 'Draw.io' },
 ]
 
-export const NAV_ITEMS = [
+export const NAV_LINKS = [
   { icon: Home, label: '首页', path: '/' },
   { icon: FolderOpen, label: '项目管理', path: '/projects' },
   { icon: User, label: '用户信息', path: '/profile' },
-  { icon: CassetteTape, label: '关于', path: '/about' },
 ]
 
 export const QUICK_ACTIONS = [

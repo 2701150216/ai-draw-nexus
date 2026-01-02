@@ -137,6 +137,9 @@ export const aiService = {
     })
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('未登录或登录已过期，请重新登录')
+      }
       const error = await response.text()
       throw new Error(`AI request failed: ${error}`)
     }
@@ -169,6 +172,9 @@ export const aiService = {
     })
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('未登录或登录已过期，请重新登录')
+      }
       const error = await response.text()
       throw new Error(`AI request failed: ${error}`)
     }

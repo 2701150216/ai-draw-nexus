@@ -88,6 +88,9 @@ export function ProjectsPage() {
           })
         : []
 
+      // 将远端项目写入本地 Dexie，便于 Editor 直接打开远端项目
+      await Promise.all(remoteProjects.map((p) => ProjectRepository.upsertRemote(p)))
+
       // 远端更新时间索引，方便为本地记录补 remoteSyncedAt
       const remoteSyncMap = new Map<string, Date>()
       remoteProjects.forEach((p) => {

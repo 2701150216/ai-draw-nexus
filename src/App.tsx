@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { TooltipProvider, Toaster } from '@/components/ui'
-import { HomePage, ProjectsPage, EditorPage, ProfilePage, AboutPage, LoginPage } from '@/pages'
+import { HomePage, ProjectsPage, EditorPage, ProfilePage, LoginPage } from '@/pages'
 import { isAuthed } from '@/services/authService'
 
 const BASENAME = (import.meta.env.VITE_BASE_PATH ?? '/').replace(/\/+$/, '') || '/'
@@ -48,14 +48,6 @@ function App() {
             element={
               <RequireAuth>
                 <ProfilePage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/about"
-            element={
-              <RequireAuth>
-                <AboutPage />
               </RequireAuth>
             }
           />

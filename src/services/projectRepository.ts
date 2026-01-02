@@ -34,6 +34,10 @@ export const ProjectRepository = {
    */
   async upsertRemote(remote: Partial<Project> & { id: string }, fallback?: Project): Promise<Project> {
     const now = new Date()
+    const id = remote.id || fallback?.remoteId || fallback?.id
+    if (!id) {
+      throw new Error('upsertRemote requires a valid id')
+    }
     const remoteUpdated =
       remote.updatedAt
         ? new Date(remote.updatedAt)
@@ -46,11 +50,11 @@ export const ProjectRepository = {
         : fallback?.createdAt || now
     const remoteSyncedAt =
       remote.remoteSyncedAt
-        ? new Date(remote.remoteSyncedAt)
+        ? remote.remoteSyncedAt
         : remoteUpdated
     const project: Project = {
-      id: remote.id,
-      remoteId: remote.id,
+      id,
+      remoteId: id,
       title: remote.title || fallback?.title || '未命名',
       engineType: (remote.engineType as EngineType) || fallback?.engineType || 'mermaid',
       thumbnail: remote.thumbnail || fallback?.thumbnail || '',

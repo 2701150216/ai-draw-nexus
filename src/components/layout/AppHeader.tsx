@@ -1,11 +1,22 @@
-import { Sparkles } from 'lucide-react'
+import { Sparkles, User } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { getAuthToken, clearAuthToken } from '@/services/authService'
+import { useEffect, useState } from 'react'
+import { getAuthToken, clearAuthToken, getAuthUsername, subscribeAuthChange } from '@/services/authService'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/Dropdown'
 
 export function AppHeader() {
   const navigate = useNavigate()
   const location = useLocation()
-  const authed = !!getAuthToken()
+  const [authed, setAuthed] = useState(!!getAuthToken())
+  const [username, setUsername] = useState(getAuthUsername() || '未登录')
+
+  useEffect(() => {
+    const unsubscribe = subscribeAuthChange(() => {
+      setAuthed(!!getAuthToken())
+      setUsername(getAuthUsername() || '未登录')
+    })
+    return () => unsubscribe()
+  }, [])
 
   const handleLogin = () => {
     navigate('/login', { state: { from: location.pathname } })
@@ -35,12 +46,20 @@ export function AppHeader() {
             登录
           </button>
         ) : (
-          <button
-            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/60"
-            onClick={handleLogout}
-          >
-            退出登录
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted/60">
+                <User className="h-4 w-4" />
+                <span>{username}</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[140px]">
+              <DropdownMenuItem onClick={() => navigate('/profile')}>用户信息</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                退出登录
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </header>

@@ -79,6 +79,49 @@ export function EditorPage() {
       const latestVersion = await VersionRepository.getLatest(id)
       if (latestVersion) {
         setContentFromVersion(latestVersion.content)
+      } else {
+        // 如果本地没有版本记录，但已同步远端，则从后端获取内容回写本地
+        const remoteId = project.remoteId || project.id
+        if (remoteId) {
+          try {
+            const remote = await diagramService.get(remoteId)
+            if (remote) {
+              const remoteUpdated = remote.updateTime ? new Date(remote.updateTime) : new Date()
+              const syncedProject = await ProjectRepository.upsertRemote(
+                {
+                  id: remote.id,
+                  title: remote.title ?? project.title,
+                  engineType: remote.engineType ?? project.engineType,
+                  thumbnail: remote.thumbnail ?? project.thumbnail,
+                  createdAt: remote.createTime ? new Date(remote.createTime) : project.createdAt,
+                  updatedAt: remoteUpdated,
+                  remoteSyncedAt: remoteUpdated,
+                },
+                project
+              )
+              setProject(syncedProject)
+
+              let content = ''
+              if (remote.engineType === 'drawio') {
+                content = remote.drawioXml || ''
+              } else if (remote.engineType === 'excalidraw') {
+                content = remote.excalidrawJson || ''
+              } else {
+                content = remote.mermaidContent || ''
+              }
+              if (content) {
+                await VersionRepository.create({
+                  projectId: syncedProject.id,
+                  content,
+                  changeSummary: '远端同步',
+                })
+                setContentFromVersion(content)
+              }
+            }
+          } catch (err) {
+            console.error('Failed to fetch remote diagram:', err)
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to load project:', error)

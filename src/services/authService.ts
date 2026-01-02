@@ -1,4 +1,6 @@
 const TOKEN_KEY = 'token'
+const USERNAME_KEY = 'username'
+const AUTH_EVENT = 'auth-changed'
 
 export interface LoginPayload {
   username: string
@@ -21,16 +23,23 @@ export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
 }
 
+export function getAuthUsername(): string | null {
+  return localStorage.getItem(USERNAME_KEY)
+}
+
 export function isAuthed(): boolean {
   return !!getAuthToken()
 }
 
 export function setAuthToken(token: string) {
   localStorage.setItem(TOKEN_KEY, token)
+  window.dispatchEvent(new Event(AUTH_EVENT))
 }
 
 export function clearAuthToken() {
   localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USERNAME_KEY)
+  window.dispatchEvent(new Event(AUTH_EVENT))
 }
 
 /**
@@ -51,8 +60,24 @@ export async function login(payload: LoginPayload): Promise<string> {
   const token = data?.token
   if (token) {
     setAuthToken(token)
+    if (payload.username) {
+      localStorage.setItem(USERNAME_KEY, payload.username)
+    }
   }
   return token
+}
+
+/**
+ * 订阅登录状态变更（set/clear token 或 storage 事件）
+ */
+export function subscribeAuthChange(callback: () => void): () => void {
+  const handler = () => callback()
+  window.addEventListener(AUTH_EVENT, handler)
+  window.addEventListener('storage', handler)
+  return () => {
+    window.removeEventListener(AUTH_EVENT, handler)
+    window.removeEventListener('storage', handler)
+  }
 }
 
 export async function register(payload: RegisterPayload): Promise<void> {
