@@ -1,5 +1,5 @@
 import type { EngineType } from '@/types'
-import { getAuthToken, clearAuthToken } from './authService'
+import { getAuthToken, clearAuthToken, promptLoginRedirect } from './authService'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/dev-api/ai'
 
@@ -28,6 +28,7 @@ export const diagramService = {
     if (!res.ok) {
       if (res.status === 401) {
         clearAuthToken()
+        promptLoginRedirect('登录已失效，是否前往登录？')
         throw new Error('未登录或登录已过期，请重新登录')
       }
       const err = await res.text()
@@ -49,6 +50,7 @@ export const diagramService = {
     if (!res.ok) {
       if (res.status === 401) {
         clearAuthToken()
+        promptLoginRedirect('登录已失效，是否前往登录？')
         throw new Error('未登录或登录已过期，请重新登录')
       }
       const err = await res.text()
@@ -70,6 +72,7 @@ export const diagramService = {
     if (!res.ok) {
       if (res.status === 401) {
         clearAuthToken()
+        promptLoginRedirect('登录已失效，是否前往登录？')
         throw new Error('未登录或登录已过期，请重新登录')
       }
       const err = await res.text()

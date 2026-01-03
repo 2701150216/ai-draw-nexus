@@ -42,6 +42,18 @@ export function clearAuthToken() {
   window.dispatchEvent(new Event(AUTH_EVENT))
 }
 
+const BASENAME = (import.meta.env.VITE_BASE_PATH ?? '/').replace(/\/+$/, '') || '/'
+
+/**
+ * 401 未登录/过期时提示并可跳转登录页
+ */
+export function promptLoginRedirect(message = '未登录或登录已过期，是否前往登录？') {
+  const target = `${BASENAME}/login`
+  if (window.confirm(message)) {
+    window.location.href = target
+  }
+}
+
 /**
  * 调用后端 /login，获取 token 并缓存
  */
