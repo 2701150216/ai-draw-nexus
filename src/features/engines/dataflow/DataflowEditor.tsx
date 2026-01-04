@@ -951,13 +951,22 @@ const Node = ({
                 </div>
                 <div className="mt-3 text-center w-32 pointer-events-none absolute top-full left-1/2 -translate-x-1/2">
                     <p
-                        className="text-[11px] font-bold transition-all duration-300 tracking-wide px-2 py-0.5 rounded text-white"
+                        className={cn(
+                            "text-[11px] font-bold transition-all duration-300 tracking-wide px-2 py-0.5 rounded",
+                            isHighlighted || isFlowing ? "text-white" : "text-zinc-500"
+                        )}
                         style={{ textShadow: '0 2px 4px rgba(0,0,0,1)' }}
                     >
                         {node.label}
                     </p>
                     {node.subLabel && (
-                        <p className="text-[9px] mt-0.5 font-medium text-zinc-300 opacity-100" style={{ textShadow: '0 1px 3px rgba(0,0,0,1)' }}>
+                        <p 
+                            className={cn(
+                                "text-[9px] mt-0.5 font-medium transition-all duration-300",
+                                isHighlighted || isFlowing ? "text-zinc-300" : "text-zinc-600"
+                            )} 
+                            style={{ textShadow: '0 1px 3px rgba(0,0,0,1)' }}
+                        >
                             {node.subLabel}
                         </p>
                     )}
