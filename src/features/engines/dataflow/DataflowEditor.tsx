@@ -4,7 +4,7 @@ import {
     MessageSquare, Search, Layers, Database, Cpu, Code,
     FileText, Zap, Brain, Server, ArrowUp, RefreshCw,
     Settings2, Move, MousePointer2, Link as LinkIcon, Trash2, X, Plus,
-    Palette, Type, Activity
+    Palette, Type, Activity, Sparkles
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -325,6 +325,200 @@ export default function KnoxEditorFinalFixV6() {
         }
         setLinkStartNodeId(null);
     };
+    
+    // 自动排版算法 - 优化版本
+    const autoLayout = useCallback(() => {
+        // 1. 构建节点层次结构
+        const nodeMap = new Map(nodes.map(n => [n.id, n]));
+        const inDegree = new Map<string, number>();
+        const outgoing = new Map<string, string[]>();
+        
+        // 初始化
+        nodes.forEach(n => {
+            inDegree.set(n.id, 0);
+            outgoing.set(n.id, []);
+        });
+        
+        // 计算入度和出边
+        connections.forEach(conn => {
+            inDegree.set(conn.end, (inDegree.get(conn.end) || 0) + 1);
+            outgoing.get(conn.start)?.push(conn.end);
+        });
+        
+        // 2. 拓扑排序分层
+        const layers: string[][] = [];
+        const nodeToLayer = new Map<string, number>();
+        const queue: string[] = [];
+        const tempInDegree = new Map(inDegree);
+        
+        // 找到所有入度为0的根节点
+        nodes.forEach(n => {
+            if (tempInDegree.get(n.id) === 0) {
+                queue.push(n.id);
+                nodeToLayer.set(n.id, 0);
+            }
+        });
+        
+        // 如果没有根节点，选择第一个节点作为起点
+        if (queue.length === 0 && nodes.length > 0) {
+            queue.push(nodes[0].id);
+            nodeToLayer.set(nodes[0].id, 0);
+        }
+        
+        // BFS分层
+        while (queue.length > 0) {
+            const nodeId = queue.shift()!;
+            const layer = nodeToLayer.get(nodeId)!;
+            
+            if (!layers[layer]) layers[layer] = [];
+            layers[layer].push(nodeId);
+            
+            outgoing.get(nodeId)?.forEach(nextId => {
+                const degree = tempInDegree.get(nextId)! - 1;
+                tempInDegree.set(nextId, degree);
+                
+                if (degree === 0 && !nodeToLayer.has(nextId)) {
+                    nodeToLayer.set(nextId, layer + 1);
+                    queue.push(nextId);
+                }
+            });
+        }
+        
+        // 处理孤立节点
+        nodes.forEach(n => {
+            if (!nodeToLayer.has(n.id)) {
+                const lastLayer = layers.length;
+                if (!layers[lastLayer]) layers[lastLayer] = [];
+                layers[lastLayer].push(n.id);
+                nodeToLayer.set(n.id, lastLayer);
+            }
+        });
+        
+        // 3. 智能布局计算
+        const canvasWidth = 1000;
+        const canvasHeight = 600;
+        const padding = 80;
+        const verticalSpacing = 120;
+        
+        // 检查是否需要使用紧凑布局（层级过多）
+        const maxLayers = Math.floor((canvasWidth - 2 * padding) / 180); // 每层最少180px
+        const useCompactLayout = layers.length > maxLayers;
+        
+        let newNodes: NodeData[];
+        
+        if (useCompactLayout) {
+            // 紧凑网格布局：Z字形排列
+            const nodesPerRow = Math.ceil(Math.sqrt(nodes.length * 1.5)); // 略宽的网格
+            const horizontalSpacing = Math.min(200, (canvasWidth - 2 * padding) / (nodesPerRow - 1));
+            
+            newNodes = nodes.map(node => {
+                const layer = nodeToLayer.get(node.id)!;
+                const layerNodes = layers[layer];
+                const indexInLayer = layerNodes.indexOf(node.id);
+                
+                // 计算全局索引（按层级顺序）
+                let globalIndex = 0;
+                for (let i = 0; i < layer; i++) {
+                    globalIndex += layers[i].length;
+                }
+                globalIndex += indexInLayer;
+                
+                // Z字形布局
+                const row = Math.floor(globalIndex / nodesPerRow);
+                const col = globalIndex % nodesPerRow;
+                
+                // 偶数行从左到右，奇数行从右到左
+                const actualCol = row % 2 === 0 ? col : (nodesPerRow - 1 - col);
+                
+                const x = padding + actualCol * horizontalSpacing;
+                const y = padding + row * verticalSpacing;
+                
+                return { ...node, x, y };
+            });
+        } else {
+            // 标准层级布局：优化分支节点间距
+            const horizontalSpacing = Math.min(180, (canvasWidth - 2 * padding) / Math.max(1, layers.length - 1));
+            
+            // 分析每个节点的分支情况
+            const nodeOutDegree = new Map<string, number>();
+            const nodeInDegree = new Map<string, number>();
+            nodes.forEach(n => {
+                nodeOutDegree.set(n.id, outgoing.get(n.id)?.length || 0);
+                nodeInDegree.set(n.id, inDegree.get(n.id) || 0);
+            });
+            
+            // 识别分支节点和汇聚节点
+            const branchSources = new Set<string>();
+            const mergeTargets = new Set<string>();
+            
+            nodes.forEach(n => {
+                const outDegree = nodeOutDegree.get(n.id) || 0;
+                const inDeg = nodeInDegree.get(n.id) || 0;
+                
+                if (outDegree > 1) branchSources.add(n.id);
+                if (inDeg > 1) mergeTargets.add(n.id);
+            });
+            
+            // 为每层计算优化后的间距
+            const layerSpacings = layers.map((layerNodes, layerIdx) => {
+                // 检查这一层是否包含分支目标或汇聚节点
+                const hasBranchTargets = layerNodes.some(nodeId => {
+                    const parents = connections.filter(c => c.end === nodeId).map(c => c.start);
+                    return parents.some(p => branchSources.has(p));
+                });
+                
+                const hasMergeNodes = layerNodes.some(nodeId => mergeTargets.has(nodeId));
+                
+                // 如果有分支或汇聚，增加间距
+                if (hasBranchTargets || hasMergeNodes) {
+                    return Math.max(verticalSpacing, verticalSpacing * 1.5); // 增加50%间距
+                }
+                
+                return verticalSpacing;
+            });
+            
+            newNodes = nodes.map(node => {
+                const layer = nodeToLayer.get(node.id)!;
+                const layerNodes = layers[layer];
+                const indexInLayer = layerNodes.indexOf(node.id);
+                const spacing = layerSpacings[layer];
+                
+                // X坐标：根据层级
+                const x = padding + layer * horizontalSpacing;
+                
+                // Y坐标：使用优化后的间距，并垂直居中
+                const totalHeight = (layerNodes.length - 1) * spacing;
+                const startY = (canvasHeight - totalHeight) / 2;
+                let y = startY + indexInLayer * spacing;
+                
+                // 如果是分支目标节点，进一步微调位置以避免连线重叠
+                const parents = connections.filter(c => c.end === node.id).map(c => c.start);
+                const hasBranchParent = parents.some(p => branchSources.has(p));
+                
+                if (hasBranchParent && parents.length === 1) {
+                    // 根据父节点的分支索引调整Y坐标
+                    const parent = parents[0];
+                    const siblings = outgoing.get(parent) || [];
+                    const siblingIndex = siblings.indexOf(node.id);
+                    const totalSiblings = siblings.length;
+                    
+                    if (totalSiblings > 1) {
+                        // 将分支节点均匀分散
+                        const spreadRange = spacing * (totalSiblings - 1);
+                        const offset = (siblingIndex - (totalSiblings - 1) / 2) * (spreadRange / (totalSiblings - 1));
+                        y += offset;
+                    }
+                }
+                
+                // 边界保护
+                y = Math.max(padding, Math.min(canvasHeight - padding, y));
+                
+                return { ...node, x, y };
+            });
+        }
+        
+        setNodes(newNodes);
+    }, [nodes, connections]);
     const updateNode = (id: string, data: Partial<NodeData>) => {
         setNodes(prev => prev.map(n => n.id === id ? { ...n, ...data } : n));
     };
@@ -412,6 +606,14 @@ export default function KnoxEditorFinalFixV6() {
                     className="flex items-center gap-2 px-3 py-1.5 bg-[#222] hover:bg-[#333] border border-white/20 text-white rounded-md text-xs font-medium transition-all hover:border-white/40"
                 >
                     <Plus size={14} /> 添加节点
+                </button>
+                
+                <button
+                    onClick={autoLayout}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-md text-xs font-medium transition-all shadow-lg hover:shadow-xl"
+                    title="智能排版：自动对齐所有节点"
+                >
+                    <Sparkles size={14} /> 自动排版
                 </button>
 
                 <div className="ml-auto px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-mono text-white font-bold tracking-wider">
