@@ -3,6 +3,7 @@ import { useEditorStore, selectEngineType } from '@/stores/editorStore'
 import { MermaidRenderer, type MermaidRendererRef } from '@/features/engines/mermaid/MermaidRenderer'
 import { ExcalidrawEditor, type ExcalidrawEditorRef } from '@/features/engines/excalidraw/ExcalidrawEditor'
 import { DrawioEditor, type DrawioEditorRef } from '@/features/engines/drawio/DrawioEditor'
+import DataflowEditor from '@/features/engines/dataflow/DataflowEditor'
 
 export interface CanvasAreaRef {
   exportAsSvg: () => void
@@ -34,6 +35,7 @@ export const CanvasArea = forwardRef<CanvasAreaRef, CanvasAreaProps>(function Ca
   const mermaidRef = useRef<MermaidRendererRef>(null)
   const excalidrawRef = useRef<ExcalidrawEditorRef>(null)
   const drawioRef = useRef<DrawioEditorRef>(null)
+  const dataflowRef = useRef<HTMLDivElement>(null)
 
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
@@ -119,16 +121,59 @@ export const CanvasArea = forwardRef<CanvasAreaRef, CanvasAreaProps>(function Ca
       if (engineType === 'drawio' && drawioRef.current) {
         return drawioRef.current.getThumbnail()
       }
+      if (engineType === 'dataflow' && dataflowRef.current) {
+        // Generate thumbnail from dataflow canvas
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return ''
+        
+        canvas.width = 400
+        canvas.height = 300
+        
+        // Fill with dark background
+        ctx.fillStyle = '#0a0a0a'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        
+        // Add simple text indicating it's a dataflow
+        ctx.fillStyle = '#ffffff'
+        ctx.font = '20px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText('Data Flow Diagram', canvas.width / 2, canvas.height / 2)
+        
+        return canvas.toDataURL('image/png')
+      }
       return ''
     },
   }), [engineType])
 
-  // Register thumbnail getter for drawio engine
+  // Register thumbnail getter for drawio and dataflow engines
   useEffect(() => {
     if (engineType === 'drawio') {
       setThumbnailGetter(async () => {
         if (drawioRef.current) {
           return drawioRef.current.getThumbnail()
+        }
+        return ''
+      })
+    } else if (engineType === 'dataflow') {
+      setThumbnailGetter(async () => {
+        if (dataflowRef.current) {
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          if (!ctx) return ''
+          
+          canvas.width = 400
+          canvas.height = 300
+          
+          ctx.fillStyle = '#0a0a0a'
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+          
+          ctx.fillStyle = '#ffffff'
+          ctx.font = '20px sans-serif'
+          ctx.textAlign = 'center'
+          ctx.fillText('Data Flow Diagram', canvas.width / 2, canvas.height / 2)
+          
+          return canvas.toDataURL('image/png')
         }
         return ''
       })
@@ -194,6 +239,12 @@ export const CanvasArea = forwardRef<CanvasAreaRef, CanvasAreaProps>(function Ca
             data={currentContent}
             onChange={handleContentChange}
           />
+        )
+      case 'dataflow':
+        return (
+          <div ref={dataflowRef} className="h-full w-full">
+            <DataflowEditor />
+          </div>
         )
       default:
         return null

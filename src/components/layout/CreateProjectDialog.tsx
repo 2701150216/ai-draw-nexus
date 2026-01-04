@@ -36,6 +36,13 @@ const ENGINE_TIPS: Record<EngineType, { title: string; features: string[] }> = {
       '支持 UML、网络拓扑、流程图等专业图表,适合绘制复杂、精细的技术文档图表',
     ],
   },
+  dataflow: {
+    title: '数据流图',
+    features: [
+      '专注于数据流程的可视化，清晰展示数据在系统中的流动路径',
+      '适合绘制数据处理流程、ETL流程、数据管道等场景',
+    ],
+  },
 }
 
 interface CreateProjectDialogProps {

@@ -480,11 +480,6 @@ export function HomePage() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         {ENGINES.map((engine) => {
-                          const descriptions: Record<string, string> = {
-                            mermaid: '简洁标准的图形绘制',
-                            excalidraw: '优雅干净的手绘风格',
-                            drawio: '专业而强大的绘图工具',
-                          }
                           return (
                             <button
                               key={engine.value}
@@ -502,7 +497,7 @@ export function HomePage() {
                                 {engine.label}
                               </div>
                               <div className="text-xs text-muted mt-0.5">
-                                {descriptions[engine.value]}
+                                {engine.description}
                               </div>
                             </button>
                           )

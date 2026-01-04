@@ -13,10 +13,11 @@ import {
 } from 'lucide-react'
 import type { EngineType } from '@/types'
 
-export const ENGINES: { value: EngineType; label: string }[] = [
-  { value: 'mermaid', label: 'Mermaid' },
-  { value: 'excalidraw', label: 'Excalidraw' },
-  { value: 'drawio', label: 'Draw.io' },
+export const ENGINES: { value: EngineType; label: string; description?: string }[] = [
+  { value: 'mermaid', label: 'Mermaid', description: '简洁标准的图形绘制' },
+  { value: 'excalidraw', label: 'Excalidraw', description: '优雅手绘的手绘风格' },
+  { value: 'drawio', label: 'Draw.io', description: '专业强大的绘图工具' },
+  { value: 'dataflow', label: '数据流图', description: '数据流程可视化' },
 ]
 
 export const NAV_LINKS = [

@@ -11,6 +11,7 @@ import {
 } from '@/lib/promptBuilder'
 import { generateThumbnail } from '@/lib/thumbnail'
 import { aiService } from '@/services/aiService'
+import { isAuthed } from '@/services/authService'
 import { validateContent } from '@/lib/validators'
 import { useToast } from '@/hooks/useToast'
 import type { PayloadMessage, EngineType, Attachment, ContentPart } from '@/types'
@@ -112,6 +113,10 @@ export function useAIGenerate() {
     attachments?: Attachment[]
   ) => {
     if (!currentProject) return
+    if (!isAuthed()) {
+      showError('请先登录后再使用 AI 画图')
+      return
+    }
 
     const engineType = currentProject.engineType
     const systemPrompt = SYSTEM_PROMPTS[engineType]
