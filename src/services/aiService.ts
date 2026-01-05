@@ -1,6 +1,7 @@
 import type { PayloadMessage, ChatRequest } from '@/types'
 import { quotaService } from './quotaService'
-import { getAuthToken, clearAuthToken, promptLoginRedirect } from './authService'
+import { getAuthToken } from './authService'
+import { apiFetch } from '@/lib/apiClient'
 
 // API endpoint - can be configured via environment variable
 // 推荐：在 RuoYi 前端走代理时设为 /dev-api/ai；若直连后端则为 /ai
@@ -129,7 +130,7 @@ export const aiService = {
   async chat(messages: PayloadMessage[]): Promise<string> {
     ensureQuotaAvailable()
 
-    const response = await fetch(`${API_BASE_URL}/chat`, {
+    const response = await apiFetch(`${API_BASE_URL}/chat`, {
       method: 'POST',
       headers: getHeaders(),
       credentials: 'include',
@@ -137,11 +138,6 @@ export const aiService = {
     })
 
     if (!response.ok) {
-      if (response.status === 401) {
-        clearAuthToken()
-        promptLoginRedirect('登录已失效，是否前往登录？')
-        throw new Error('未登录或登录已过期，请重新登录')
-      }
       const error = await response.text()
       throw new Error(`AI request failed: ${error}`)
     }
@@ -166,7 +162,7 @@ export const aiService = {
   ): Promise<string> {
     ensureQuotaAvailable()
 
-    const response = await fetch(`${API_BASE_URL}/chat`, {
+    const response = await apiFetch(`${API_BASE_URL}/chat`, {
       method: 'POST',
       headers: getHeaders(),
       credentials: 'include',
@@ -174,11 +170,6 @@ export const aiService = {
     })
 
     if (!response.ok) {
-      if (response.status === 401) {
-        clearAuthToken()
-        promptLoginRedirect('登录已失效，是否前往登录？')
-        throw new Error('未登录或登录已过期，请重新登录')
-      }
       const error = await response.text()
       throw new Error(`AI request failed: ${error}`)
     }

@@ -1,5 +1,5 @@
 import type { EngineType } from '@/types'
-import { getAuthToken, clearAuthToken, promptLoginRedirect } from './authService'
+import { apiClient } from '@/lib/apiClient'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/dev-api/ai'
 
@@ -7,30 +7,24 @@ export interface DiagramSavePayload {
   id?: string
   title?: string
   engineType: EngineType
+  thumbnail?: string
+  mermaid?: { content: string }
+  drawio?: { xml: string }
+  excalidraw?: { json: string }
+  dataflow?: { nodes: any[]; edges: any[] }
+  // 兼容旧字段（将被后端转换）
   mermaidContent?: string
   drawioXml?: string
   excalidrawJson?: string
-  thumbnail?: string
+  dataflowJson?: string
 }
 
 export const diagramService = {
   async save(payload: DiagramSavePayload) {
-    const token = getAuthToken()
-    const res = await fetch(`${API_BASE_URL}/diagram`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+    const res = await apiClient.post(`${API_BASE_URL}/diagram`, payload, {
       credentials: 'include',
-      body: JSON.stringify(payload),
     })
     if (!res.ok) {
-      if (res.status === 401) {
-        clearAuthToken()
-        promptLoginRedirect('登录已失效，是否前往登录？')
-        throw new Error('未登录或登录已过期，请重新登录')
-      }
       const err = await res.text()
       throw new Error(err || '保存失败')
     }
@@ -40,19 +34,10 @@ export const diagramService = {
   },
 
   async list() {
-    const token = getAuthToken()
-    const res = await fetch(`${API_BASE_URL}/diagram/list`, {
+    const res = await apiClient.get(`${API_BASE_URL}/diagram/list`, {
       credentials: 'include',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
     })
     if (!res.ok) {
-      if (res.status === 401) {
-        clearAuthToken()
-        promptLoginRedirect('登录已失效，是否前往登录？')
-        throw new Error('未登录或登录已过期，请重新登录')
-      }
       const err = await res.text()
       throw new Error(err || '查询失败')
     }
@@ -62,19 +47,10 @@ export const diagramService = {
   },
 
   async get(id: string) {
-    const token = getAuthToken()
-    const res = await fetch(`${API_BASE_URL}/diagram/${id}`, {
+    const res = await apiClient.get(`${API_BASE_URL}/diagram/${id}`, {
       credentials: 'include',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
     })
     if (!res.ok) {
-      if (res.status === 401) {
-        clearAuthToken()
-        promptLoginRedirect('登录已失效，是否前往登录？')
-        throw new Error('未登录或登录已过期，请重新登录')
-      }
       const err = await res.text()
       throw new Error(err || '查询失败')
     }

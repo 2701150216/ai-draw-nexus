@@ -38,6 +38,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useEditorStore } from '@/stores/editorStore';
+import { NodeDetailPanel } from './components/NodeDetailPanel';
 
 // --- 工具函数 ---
 function cn(...inputs: ClassValue[]) {
@@ -55,11 +56,9 @@ const PRESET_COLORS = ['#3b82f6', '#8b5cf6', '#a855f7', '#06b6d4', '#f59e0b', '#
 const connectionNodeIdSelector = (state: ReactFlowState) => state.connectionNodeId;
 
 // --- 类型定义 ---
-interface CustomNodeData {
-    label: string;
-    subLabel?: string;
-    iconKey: string;
-    color: string;
+import type { DataflowNodeData, ToolboxDocumentRef } from '@/types/dataflow';
+
+interface CustomNodeData extends DataflowNodeData {
     isHighlight?: boolean;
     isDimmed?: boolean;
 }
@@ -287,14 +286,14 @@ CustomEdge.displayName = "CustomEdge";
 
 // --- 初始数据 ---
 const initialNodes: Node<CustomNodeData>[] = [
-    { id: 'user', position: { x: 0, y: 0 }, data: { label: '用户输入', iconKey: 'MessageSquare', color: '#3b82f6' }, type: 'custom' },
-    { id: 'search', position: { x: 0, y: 0 }, data: { label: '搜索', subLabel: '任意向量', iconKey: 'Search', color: '#8b5cf6' }, type: 'custom' },
-    { id: 'embedding', position: { x: 0, y: 0 }, data: { label: '向量嵌入', subLabel: '生成', iconKey: 'Layers', color: '#8b5cf6' }, type: 'custom' },
-    { id: 'vectorDB', position: { x: 0, y: 0 }, data: { label: '向量存储', iconKey: 'Database', color: '#a855f7' }, type: 'custom' },
-    { id: 'rerank', position: { x: 0, y: 0 }, data: { label: '重排序', subLabel: '结果', iconKey: 'ArrowUp', color: '#8b5cf6' }, type: 'custom' },
-    { id: 'plan', position: { x: 0, y: 0 }, data: { label: '计划模型', subLabel: '自选模型', iconKey: 'Brain', color: '#06b6d4' }, type: 'custom' },
-    { id: 'task', position: { x: 0, y: 0 }, data: { label: '任务系统', iconKey: 'Zap', color: '#f59e0b' }, type: 'custom' },
-    { id: 'output', position: { x: 0, y: 0 }, data: { label: '最终输出', iconKey: 'Server', color: '#10b981' }, type: 'custom' },
+    { id: 'user', position: { x: 50, y: 150 }, data: { label: '用户输入', iconKey: 'MessageSquare', color: '#3b82f6' }, type: 'custom' },
+    { id: 'search', position: { x: 280, y: 50 }, data: { label: '搜索', subLabel: '任意向量', iconKey: 'Search', color: '#8b5cf6' }, type: 'custom' },
+    { id: 'embedding', position: { x: 510, y: 50 }, data: { label: '向量嵌入', subLabel: '生成', iconKey: 'Layers', color: '#8b5cf6' }, type: 'custom' },
+    { id: 'vectorDB', position: { x: 740, y: 50 }, data: { label: '向量存储', iconKey: 'Database', color: '#a855f7' }, type: 'custom' },
+    { id: 'rerank', position: { x: 970, y: 50 }, data: { label: '重排序', subLabel: '结果', iconKey: 'ArrowUp', color: '#8b5cf6' }, type: 'custom' },
+    { id: 'plan', position: { x: 280, y: 250 }, data: { label: '计划模型', subLabel: '自选模型', iconKey: 'Brain', color: '#06b6d4' }, type: 'custom' },
+    { id: 'task', position: { x: 510, y: 250 }, data: { label: '任务系统', iconKey: 'Zap', color: '#f59e0b' }, type: 'custom' },
+    { id: 'output', position: { x: 1200, y: 150 }, data: { label: '最终输出', iconKey: 'Server', color: '#10b981' }, type: 'custom' },
 ];
 
 const initialEdges: Edge[] = [
@@ -476,19 +475,56 @@ TopControlPanel.displayName = "TopControlPanel";
 
 // --- 4. 主逻辑组件 ---
 function FlowEditorInner() {
+    const currentContent = useEditorStore((s) => s.currentContent);
+    const setContent = useEditorStore((s) => s.setContent);
+    const hasLoadedContent = useRef(false);
+    const hasFitViewAfterLoad = useRef(false);
+
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const { fitView, deleteElements, getNodes, getEdges, project } = useReactFlow();
-    const setContent = useEditorStore((s) => s.setContent);
 
     const [isEditMode, setIsEditMode] = useState(false);
     const [selectedSelection, setSelectedSelection] = useState<{ type: 'node' | 'edge', id: string, data: any } | null>(null);
+    const [selectedNodeForDetail, setSelectedNodeForDetail] = useState<{ id: string; data: CustomNodeData } | null>(null);
 
     const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
     const edgeTypes = useMemo(() => ({ custom: CustomEdge }), []);
 
     const engineRef = useRef<FlowEngine | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    // ✅ 从 currentContent 加载保存的数据
+    useEffect(() => {
+        if (currentContent && !hasLoadedContent.current) {
+            try {
+                const parsed = JSON.parse(currentContent);
+                if (parsed.nodes && parsed.edges) {
+                    setNodes(parsed.nodes);
+                    setEdges(parsed.edges);
+                    hasLoadedContent.current = true;
+                    hasFitViewAfterLoad.current = false; // 允许后续居中缩放
+                }
+            } catch (err) {
+                console.warn('Failed to parse dataflow content, using defaults:', err);
+            }
+        }
+    }, [currentContent, setNodes, setEdges]);
+
+    // ✅ 加载完成后自动整体居中缩放，保持节点相对位置
+    useEffect(() => {
+        if (!hasLoadedContent.current || hasFitViewAfterLoad.current) return;
+        if (!nodes.length && !edges.length) return;
+        const timer = setTimeout(() => {
+            try {
+                fitView({ padding: 0.35, duration: 700, includeHiddenNodes: true });
+                hasFitViewAfterLoad.current = true;
+            } catch (err) {
+                console.warn('fitView failed', err);
+            }
+        }, 50); // 等待节点渲染完成
+        return () => clearTimeout(timer);
+    }, [nodes, edges, fitView]);
 
     // 初始化引擎
     if (!engineRef.current) {
@@ -544,8 +580,9 @@ function FlowEditorInner() {
     }, [getNodes, getEdges, setNodes, setEdges, fitView]);
 
     const onInit = useCallback(() => {
-        onLayout('LR');
-    }, [onLayout]);
+        // 移除自动布局，保留用户保存的节点位置
+        // 用户需要手动点击"水平排版"或"垂直排版"按钮来应用布局
+    }, []);
 
     const onConnect = useCallback((params: Connection) => {
         setEdges((eds) => addEdge({
@@ -576,6 +613,9 @@ function FlowEditorInner() {
     }, []);
 
     const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+        // 打开节点详情面板
+        setSelectedNodeForDetail({ id: node.id, data: node.data as CustomNodeData });
+        
         if (isEditMode) {
             setSelectedSelection({ type: 'node', id: node.id, data: node.data });
         } else {
@@ -630,6 +670,10 @@ function FlowEditorInner() {
             if (n.id === id) {
                 const updatedData = { ...n.data, ...newData };
                 setSelectedSelection({ type: 'node', id, data: updatedData });
+                // 同时更新详情面板显示的节点数据
+                setSelectedNodeForDetail(prev => 
+                    prev?.id === id ? { id, data: updatedData } : prev
+                );
                 return { ...n, data: updatedData };
             }
             return n;
@@ -653,6 +697,8 @@ function FlowEditorInner() {
 
     const handleDelete = useCallback(() => {
         if (!selectedSelection) return;
+        // 仅编辑模式允许删除
+        if (!isEditMode) return;
         if (selectedSelection.type === 'node') {
             const nodeToDelete = nodes.find(n => n.id === selectedSelection.id);
             if (nodeToDelete) deleteElements({ nodes: [nodeToDelete] });
@@ -661,7 +707,7 @@ function FlowEditorInner() {
             if (edgeToDelete) deleteElements({ edges: [edgeToDelete] });
         }
         setSelectedSelection(null);
-    }, [selectedSelection, nodes, edges, deleteElements]);
+    }, [selectedSelection, nodes, edges, deleteElements, isEditMode]);
 
     const handleAddNode = useCallback(() => {
         const id = `n-${Date.now()}`;
@@ -741,6 +787,16 @@ function FlowEditorInner() {
                     />
                 )}
             </AnimatePresence>
+
+            {/* 节点详情面板 */}
+            {selectedNodeForDetail && (
+                <NodeDetailPanel
+                    node={selectedNodeForDetail}
+                    isEditMode={isEditMode}
+                    onUpdateNode={updateNodeData}
+                    onClose={() => setSelectedNodeForDetail(null)}
+                />
+            )}
         </div>
     );
 }

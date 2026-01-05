@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Sparkles, Paperclip, ChevronDown, Plus, Send, Link, X, MoveRight } from 'lucide-react'
 import { Button, Loading } from '@/components/ui'
@@ -42,20 +42,7 @@ export function HomePage() {
   // 新建项目弹窗状态
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
-  useEffect(() => {
-    loadRecentProjects()
-  }, [])
-
-  // 点击外部关闭引擎选择下拉框
-  useEffect(() => {
-    const handleClickOutside = () => setShowEngineDropdown(false)
-    if (showEngineDropdown) {
-      document.addEventListener('click', handleClickOutside)
-      return () => document.removeEventListener('click', handleClickOutside)
-    }
-  }, [showEngineDropdown])
-
-  const loadRecentProjects = async () => {
+  const loadRecentProjects = useCallback(async () => {
     try {
       const [localProjects, remoteRaw] = await Promise.all([
         ProjectRepository.getAll(),
@@ -116,7 +103,28 @@ export function HomePage() {
     } catch (error) {
       console.error('Failed to load projects:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadRecentProjects()
+  }, [loadRecentProjects])
+
+  // 处理从编辑页返回时要求刷新项目数据
+  useEffect(() => {
+    if (location.state?.reloadProjects) {
+      loadRecentProjects()
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state, navigate, loadRecentProjects])
+
+  // 点击外部关闭引擎选择下拉框
+  useEffect(() => {
+    const handleClickOutside = () => setShowEngineDropdown(false)
+    if (showEngineDropdown) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showEngineDropdown])
 
   const isLocalCache = (project: Project) => {
     if (!project.remoteId) return true

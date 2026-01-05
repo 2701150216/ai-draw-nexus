@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Plus, Trash2, Sparkles, Pencil, Upload } from 'lucide-react'
 import {
@@ -48,21 +48,7 @@ export function ProjectsPage() {
   const [newTitle, setNewTitle] = useState('')
   const [isRenaming, setIsRenaming] = useState(false)
 
-  // Load projects
-  useEffect(() => {
-    loadProjects()
-  }, [])
-
-  // Open create dialog if navigated with state
-  useEffect(() => {
-    if (location.state?.openCreateDialog) {
-      setIsCreateDialogOpen(true)
-      // Clear the state to prevent reopening on refresh
-      navigate(location.pathname, { replace: true, state: {} })
-    }
-  }, [location.state])
-
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     setIsLoading(true)
     try {
       const [localProjects, remoteRaw] = await Promise.all([
@@ -126,7 +112,26 @@ export function ProjectsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  // Load projects
+  useEffect(() => {
+    loadProjects()
+  }, [loadProjects])
+
+  // Open create dialog if navigated with state
+  useEffect(() => {
+    if (location.state?.openCreateDialog) {
+      setIsCreateDialogOpen(true)
+      // Clear the state to prevent reopening on refresh
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+    // 需要强制刷新项目列表时（例如从编辑页返回）
+    if (location.state?.reloadProjects) {
+      loadProjects()
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state, navigate, loadProjects])
 
   const handleDelete = async () => {
     if (!deleteTarget) return

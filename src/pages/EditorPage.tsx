@@ -103,11 +103,17 @@ export function EditorPage() {
 
               let content = ''
               if (remote.engineType === 'drawio') {
-                content = remote.drawioXml || ''
+                content = remote.drawio?.xml || remote.drawioXml || ''
               } else if (remote.engineType === 'excalidraw') {
-                content = remote.excalidrawJson || ''
+                content = remote.excalidraw?.json || remote.excalidrawJson || ''
+              } else if (remote.engineType === 'dataflow') {
+                if (remote.dataflow?.nodes && remote.dataflow?.edges) {
+                  content = JSON.stringify({ nodes: remote.dataflow.nodes, edges: remote.dataflow.edges })
+                } else {
+                  content = remote.dataflowJson || ''
+                }
               } else {
-                content = remote.mermaidContent || ''
+                content = remote.mermaid?.content || remote.mermaidContent || ''
               }
               if (content) {
                 await VersionRepository.create({
@@ -163,12 +169,13 @@ export function EditorPage() {
 
   const handleProjectManagement = () => {
     setIsMenuOpen(false)
-    navigate('/projects')
+    // 返回项目列表并请求刷新项目数据（用于更新本地缓存标记）
+    navigate('/projects', { state: { reloadProjects: true } })
   }
 
   const handleGoHome = () => {
     setIsMenuOpen(false)
-    navigate('/')
+    navigate('/', { state: { reloadProjects: true } })
   }
 
   const handleStartEditTitle = () => {
@@ -274,13 +281,23 @@ export function EditorPage() {
           thumbnail: currentProject.thumbnail,
         }
         if (currentProject.engineType === 'mermaid') {
-          payload.mermaidContent = currentContent
+          payload.mermaid = { content: currentContent }
         } else if (currentProject.engineType === 'drawio') {
-          payload.drawioXml = currentContent
+          payload.drawio = { xml: currentContent }
         } else if (currentProject.engineType === 'excalidraw') {
-          payload.excalidrawJson = currentContent
+          payload.excalidraw = { json: currentContent }
+        } else if (currentProject.engineType === 'dataflow') {
+          try {
+            const parsed = JSON.parse(currentContent || '{}')
+            payload.dataflow = {
+              nodes: parsed.nodes || [],
+              edges: parsed.edges || [],
+            }
+          } catch {
+            payload.dataflow = { nodes: [], edges: [] }
+          }
         } else {
-          payload.mermaidContent = currentContent
+          payload.mermaid = { content: currentContent }
         }
         const saved = await diagramService.save(payload)
         // 保存成功后将远端数据写回本地（保持 remoteId），并清理旧的本地缓存 ID

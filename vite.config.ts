@@ -25,6 +25,11 @@ export default defineConfig(({ mode }) => {
           // 若后端无自定义 context-path，则直接去掉前缀；如需自定义请改此处
           rewrite: (p) => p.replace(/^\/dev-api/, ''),
         },
+        // 将 /api/km/** 代理到 toolbox 后端
+        '/api/km': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+        },
       },
     },
   }

@@ -106,12 +106,22 @@ export const ProjectRepository = {
   },
 
   /**
-   * Search projects by title keyword
+   * Clear all local projects and versions (用于“清除缓存”)
+   */
+  async clearAll(): Promise<void> {
+    await db.transaction('rw', [db.projects, db.versionHistory], async () => {
+      await db.versionHistory.clear()
+      await db.projects.clear()
+    })
+  },
+
+  /**
+   * Search projects by keyword
    */
   async search(keyword: string): Promise<Project[]> {
-    const lowerKeyword = keyword.toLowerCase()
+    const lower = keyword.toLowerCase()
     return db.projects
-      .filter((project) => project.title.toLowerCase().includes(lowerKeyword))
+      .filter((project) => project.title.toLowerCase().includes(lower))
       .reverse()
       .sortBy('updatedAt')
   },
