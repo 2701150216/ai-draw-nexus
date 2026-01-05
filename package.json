@@ -23,6 +23,7 @@
     "@radix-ui/react-toast": "^1.2.15",
     "@radix-ui/react-tooltip": "^1.2.8",
     "clsx": "^2.1.1",
+    "dagre": "^0.8.5",
     "date-fns": "^4.1.0",
     "dexie": "^4.2.1",
     "framer-motion": "^12.23.26",
@@ -36,6 +37,7 @@
     "react-drawio": "^1.0.7",
     "react-router-dom": "^7.11.0",
     "react-simple-code-editor": "^0.14.1",
+    "reactflow": "^11.11.4",
     "tailwind-merge": "^3.4.0",
     "turndown": "^7.2.2",
     "uuid": "^13.0.0",
@@ -45,6 +47,7 @@
     "@cloudflare/workers-types": "^4.20240925.0",
     "@eslint/js": "^9.39.1",
     "@tailwindcss/vite": "^4.1.18",
+    "@types/dagre": "^0.7.53",
     "@types/node": "^24.10.1",
     "@types/prismjs": "^1.26.5",
     "@types/react": "^18.3.12",
@@ -64,3 +67,4 @@
     "wrangler": "^3.75.0"
   }
 }
+
