@@ -33,7 +33,7 @@ import {
     MessageSquare, Search, Layers, Database, Cpu, Code,
     FileText, Zap, Brain, Server, ArrowUp, Sparkles,
     Layout, Settings2, X, Palette, Type, Activity, Trash2,
-    Spline, Minus, CornerDownRight
+    Spline, Minus, CornerDownRight, Pencil, Check
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -238,9 +238,9 @@ const AnimatedDataPoint = ({ pathD, color, duration }: { pathD: string; color: s
 };
 
 // --- 3. 自定义连线组件 ---
-const CustomEdge = ({
-                        id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data, selected
-                    }: EdgeProps) => {
+const CustomEdge = React.memo(({
+                                   id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data, selected
+                               }: EdgeProps) => {
     const pathType = data?.pathType || 'bezier';
     let edgePath = '';
     const params = { sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition };
@@ -282,7 +282,8 @@ const CustomEdge = ({
             )}
         </g>
     );
-};
+});
+CustomEdge.displayName = "CustomEdge";
 
 // --- 初始数据 ---
 const initialNodes: Node<CustomNodeData>[] = [
@@ -438,8 +439,8 @@ const InputGroup = ({ label, children }: { label: string, children: React.ReactN
     <div className="space-y-1.5"><label className="text-[11px] font-bold text-white uppercase tracking-wider ml-1">{label}</label>{children}</div>
 );
 
-// ✅ 修复：提取控制面板并使用 React.memo，防止 React Flow 重渲染时导致按钮/Tooltip 循环更新
-const TopControlPanel = React.memo(({ onLayout, onAddNode }: { onLayout: (dir: 'LR' | 'TB') => void, onAddNode: () => void }) => {
+// 控制面板组件
+const TopControlPanel = React.memo(({ isEditMode, onToggleEdit, onLayout, onAddNode }: { isEditMode: boolean, onToggleEdit: () => void, onLayout: (dir: 'LR' | 'TB') => void, onAddNode: () => void }) => {
     return (
         <Panel position="top-center" className="bg-[#1a1a1a]/80 backdrop-blur-md p-2 rounded-xl border border-white/10 flex gap-4 shadow-xl pointer-events-auto">
             <button onClick={() => onLayout('LR')} className="flex items-center gap-2 px-3 py-1.5 bg-[#333] hover:bg-[#444] text-white rounded-lg text-xs font-bold transition-all">
@@ -449,11 +450,25 @@ const TopControlPanel = React.memo(({ onLayout, onAddNode }: { onLayout: (dir: '
                 <Layout size={14} /> 垂直排版
             </button>
             <div className="w-px h-6 bg-white/10 mx-1" />
-            <button onClick={onAddNode}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-[#222] hover:bg-[#333] border border-white/20 text-white rounded-lg text-xs font-medium"
+
+            <button
+                onClick={onToggleEdit}
+                className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 border border-white/20 rounded-lg text-xs font-medium transition-all",
+                    isEditMode ? "bg-blue-600 text-white border-blue-500" : "bg-[#222] hover:bg-[#333] text-zinc-300"
+                )}
             >
-                <Sparkles size={14} /> 添加节点
+                {isEditMode ? <Check size={14} /> : <Pencil size={14} />}
+                {isEditMode ? "完成编辑" : "编辑模式"}
             </button>
+
+            {isEditMode && (
+                <button onClick={onAddNode}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-[#222] hover:bg-[#333] border border-white/20 text-white rounded-lg text-xs font-medium animate-in fade-in slide-in-from-left-2"
+                >
+                    <Sparkles size={14} /> 添加节点
+                </button>
+            )}
         </Panel>
     );
 });
@@ -466,6 +481,7 @@ function FlowEditorInner() {
     const { fitView, deleteElements, getNodes, getEdges, project } = useReactFlow();
     const setContent = useEditorStore((s) => s.setContent);
 
+    const [isEditMode, setIsEditMode] = useState(false);
     const [selectedSelection, setSelectedSelection] = useState<{ type: 'node' | 'edge', id: string, data: any } | null>(null);
 
     const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
@@ -481,19 +497,24 @@ function FlowEditorInner() {
                 ...e,
                 data: { ...e.data, isFlowing: activeEdgeIds.has(e.id) }
             })));
-        });
-    }
+        });    
+}
 
     // 更新引擎数据
     useEffect(() => {
         engineRef.current?.updateData(nodes, edges);
     }, [nodes, edges]);
 
-    // 存储内容
+    // ✅ 修复：使用防抖（Debounce）来保存内容，避免拖拽时频繁触发父组件重渲染导致死循环
     useEffect(() => {
-        const data = JSON.stringify({ nodes, edges });
-        setContent(data);
+        const handler = setTimeout(() => {
+            const data = JSON.stringify({ nodes, edges });
+            setContent(data);
+        }, 500); // 500ms 延迟保存
+
+        return () => clearTimeout(handler);
     }, [nodes, edges, setContent]);
+
     // 自动运行逻辑
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -508,7 +529,6 @@ function FlowEditorInner() {
         return () => clearTimeout(timer);
     }, []);
 
-    // ✅ 修复：使用 useCallback 缓存 onLayout
     const onLayout = useCallback((direction: 'LR' | 'TB') => {
         const currentNodes = getNodes();
         const currentEdges = getEdges();
@@ -516,7 +536,6 @@ function FlowEditorInner() {
         setNodes([...layoutedNodes]);
         setEdges([...layoutedEdges]);
 
-        // 确保布局更新后适配视图
         setTimeout(() => {
             window.requestAnimationFrame(() => {
                 fitView({ padding: 0.2, duration: 800 });
@@ -524,7 +543,6 @@ function FlowEditorInner() {
         }, 100);
     }, [getNodes, getEdges, setNodes, setEdges, fitView]);
 
-    // ✅ 修复：使用 onInit 回调来触发初始布局，确保 React Flow 实例已就绪
     const onInit = useCallback(() => {
         onLayout('LR');
     }, [onLayout]);
@@ -558,35 +576,38 @@ function FlowEditorInner() {
     }, []);
 
     const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-        setSelectedSelection({ type: 'node', id: node.id, data: node.data });
+        if (isEditMode) {
+            setSelectedSelection({ type: 'node', id: node.id, data: node.data });
+        } else {
+            const { nodes: downstreamNodes, edges: downstreamEdges } = getDownstreamElements(node.id, getNodes(), getEdges());
 
-        const { nodes: downstreamNodes, edges: downstreamEdges } = getDownstreamElements(node.id, getNodes(), getEdges());
+            setNodes(nds => nds.map(n => ({
+                ...n,
+                data: {
+                    ...n.data,
+                    isHighlight: downstreamNodes.has(n.id),
+                    isDimmed: !downstreamNodes.has(n.id)
+                }
+            })));
 
-        setNodes(nds => nds.map(n => ({
-            ...n,
-            data: {
-                ...n.data,
-                isHighlight: downstreamNodes.has(n.id),
-                isDimmed: !downstreamNodes.has(n.id)
+            setEdges(eds => eds.map(e => ({
+                ...e,
+                data: {
+                    ...e.data,
+                    isHighlight: downstreamEdges.has(e.id),
+                    isDimmed: !downstreamEdges.has(e.id),
+                    isFlowing: false
+                }
+            })));
+
+            if (engineRef.current) {
+                engineRef.current.start([node.id], false);
             }
-        })));
-
-        setEdges(eds => eds.map(e => ({
-            ...e,
-            data: {
-                ...e.data,
-                isHighlight: downstreamEdges.has(e.id),
-                isDimmed: !downstreamEdges.has(e.id),
-                isFlowing: false
-            }
-        })));
-
-        if (engineRef.current) {
-            engineRef.current.start([node.id], false);
         }
-    }, [getDownstreamElements, getNodes, getEdges, setNodes, setEdges]);
+    }, [isEditMode, getDownstreamElements, getNodes, getEdges, setNodes, setEdges]);
 
     const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
+        if (!isEditMode) return;
         const edgeData = {
             ...edge.data,
             color: edge.style?.stroke,
@@ -594,13 +615,15 @@ function FlowEditorInner() {
             pathType: edge.data?.pathType || 'bezier'
         };
         setSelectedSelection({ type: 'edge', id: edge.id, data: edgeData });
-    }, []);
+    }, [isEditMode]);
 
     const onPaneClick = useCallback(() => {
         setSelectedSelection(null);
-        setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, isHighlight: false, isDimmed: false } })));
-        setEdges(eds => eds.map(e => ({ ...e, data: { ...e.data, isHighlight: false, isDimmed: false } })));
-    }, [setNodes, setEdges]);
+        if (!isEditMode) {
+            setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, isHighlight: false, isDimmed: false } })));
+            setEdges(eds => eds.map(e => ({ ...e, data: { ...e.data, isHighlight: false, isDimmed: false } })));
+        }
+    }, [isEditMode, setNodes, setEdges]);
 
     const updateNodeData = useCallback((id: string, newData: Partial<CustomNodeData>) => {
         setNodes((nds) => nds.map((n) => {
@@ -640,7 +663,6 @@ function FlowEditorInner() {
         setSelectedSelection(null);
     }, [selectedSelection, nodes, edges, deleteElements]);
 
-    // ✅ 修复：缓存 handleAddNode
     const handleAddNode = useCallback(() => {
         const id = `n-${Date.now()}`;
         const wrapper = containerRef.current;
@@ -660,6 +682,25 @@ function FlowEditorInner() {
         setNodes((nds) => nds.concat(newNode));
     }, [project, setNodes]);
 
+    const handleToggleEdit = useCallback(() => {
+        setIsEditMode(prev => !prev);
+        setSelectedSelection(null);
+    }, []);
+
+    // ✅ 修复：将 UI 组件包裹在 useMemo 中，防止拖拽时频繁重渲染导致的 UI 库报错
+    const uiOverlay = useMemo(() => (
+        <>
+            <Background color="#333" gap={24} size={1} />
+            <Controls className="bg-[#1a1a1a] border-white/10 fill-white" />
+            <TopControlPanel
+                isEditMode={isEditMode}
+                onToggleEdit={handleToggleEdit}
+                onLayout={onLayout}
+                onAddNode={handleAddNode}
+            />
+        </>
+    ), [isEditMode, handleToggleEdit, onLayout, handleAddNode]);
+
     return (
         <div ref={containerRef} className="w-full h-full bg-[#050505] relative flex overflow-hidden">
             <div className="flex-1 relative">
@@ -674,19 +715,18 @@ function FlowEditorInner() {
                     onNodeClick={onNodeClick}
                     onEdgeClick={onEdgeClick}
                     onPaneClick={onPaneClick}
-                    onInit={onInit} // ✅ 修复：使用 onInit 触发初始布局
+                    onInit={onInit}
                     connectionLineType={ConnectionLineType.SmoothStep}
                     defaultEdgeOptions={{ type: 'custom' }}
                     fitView
                     minZoom={0.2}
                     maxZoom={2}
                     proOptions={{ hideAttribution: true }}
+                    nodesDraggable={isEditMode}
+                    nodesConnectable={isEditMode}
+                    elementsSelectable={true}
                 >
-                    <Background color="#333" gap={24} size={1} />
-                    <Controls className="bg-[#1a1a1a] border-white/10 fill-white" />
-
-                    {/* ✅ 修复：使用 Memo 化的控制面板，避免循环更新 */}
-                    <TopControlPanel onLayout={onLayout} onAddNode={handleAddNode} />
+                    {uiOverlay}
                 </ReactFlow>
             </div>
 
