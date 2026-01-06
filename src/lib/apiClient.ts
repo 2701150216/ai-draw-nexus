@@ -20,8 +20,8 @@ export async function apiFetch(
 
   // 自动添加 Authorization header
   const token = getAuthToken()
-  const enhancedHeaders: HeadersInit = {
-    ...headers,
+  const enhancedHeaders: Record<string, string> = {
+    ...(headers as Record<string, string>),
   }
 
   if (token && !skipAuthInterceptor) {
