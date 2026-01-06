@@ -33,7 +33,7 @@ import {
     MessageSquare, Search, Layers, Database, Cpu, Code,
     FileText, Zap, Brain, Server, ArrowUp, Sparkles,
     Layout, Settings2, X, Palette, Type, Activity, Trash2,
-    Spline, Minus, CornerDownRight, Pencil, Check
+    Spline, Minus, CornerDownRight, Pencil, Check, MoreVertical
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -61,6 +61,7 @@ import type { DataflowNodeData, ToolboxDocumentRef } from '@/types/dataflow';
 interface CustomNodeData extends DataflowNodeData {
     isHighlight?: boolean;
     isDimmed?: boolean;
+    isAnimating?: boolean;
 }
 
 // --- 核心引擎类 ---
@@ -70,10 +71,12 @@ class FlowEngine {
     private activeFlows: Set<string> = new Set();
     private timer: ReturnType<typeof setTimeout> | null = null;
     private onUpdate: (activeEdgeIds: Set<string>) => void;
+    private onNodeAnimate: ((nodeId: string) => void) | null = null;
     private isRunning: boolean = false;
 
-    constructor(onUpdate: (activeEdgeIds: Set<string>) => void) {
+    constructor(onUpdate: (activeEdgeIds: Set<string>) => void, onNodeAnimate?: (nodeId: string) => void) {
         this.onUpdate = onUpdate;
+        this.onNodeAnimate = onNodeAnimate || null;
     }
 
     public updateData(nodes: Node[], edges: Edge[]) {
@@ -127,6 +130,12 @@ class FlowEngine {
             this.onUpdate(new Set(this.activeFlows));
 
             const nextNodeIds = Array.from(new Set(outgoingEdges.map(e => e.target)));
+            
+            // 触发到达节点的动画特效
+            if (this.onNodeAnimate) {
+                nextNodeIds.forEach(nodeId => this.onNodeAnimate!(nodeId));
+            }
+            
             this.processStep(nextNodeIds, isAutoLoop);
 
         }, maxDuration * 1000);
@@ -140,11 +149,13 @@ class FlowEngine {
 }
 
 // --- 1. 自定义节点组件 ---
-const CustomNode = React.memo(({ data, selected }: { data: CustomNodeData; selected: boolean }) => {
+const CustomNode = React.memo(({ data, selected, id }: { data: CustomNodeData; selected: boolean; id: string }) => {
+    const [showMenu, setShowMenu] = useState(false);
     const Icon = ICON_MAP[data.iconKey] || Cpu;
     const color = data.color || '#fff';
     const opacityClass = data.isDimmed ? 'opacity-20 grayscale' : 'opacity-100';
     const highlightClass = data.isHighlight ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : '';
+    const animatingClass = data.isAnimating ? 'animate-pulse scale-110' : '';
 
     const connectionNodeId = useStore(connectionNodeIdSelector);
     const isConnecting = !!connectionNodeId;
@@ -154,7 +165,11 @@ const CustomNode = React.memo(({ data, selected }: { data: CustomNodeData; selec
     const handleBaseStyle = { width: 12, height: 12, background: 'transparent', border: 'none' };
 
     return (
-        <div className={cn("relative group transition-all duration-300", opacityClass)}>
+        <div 
+            className={cn("relative group transition-all duration-300", opacityClass)}
+            onMouseEnter={() => setShowMenu(true)}
+            onMouseLeave={() => setShowMenu(false)}
+        >
             <Handle type="target" position={Position.Left} id="l-t" style={{ ...handleBaseStyle, zIndex: targetZ }} />
             <Handle type="source" position={Position.Left} id="l-s" style={{ ...handleBaseStyle, zIndex: sourceZ }} />
             <Handle type="source" position={Position.Right} id="r-s" style={{ ...handleBaseStyle, zIndex: sourceZ }} />
@@ -176,15 +191,39 @@ const CustomNode = React.memo(({ data, selected }: { data: CustomNodeData; selec
             <div
                 className={cn(
                     "relative w-16 h-16 rounded-2xl flex items-center justify-center bg-[#0a0a0a] border-2 transition-all duration-300 z-10",
-                    highlightClass
+                    highlightClass,
+                    animatingClass
                 )}
                 style={{
-                    borderColor: (selected || data.isHighlight) ? color : `${color}30`,
-                    boxShadow: (selected || data.isHighlight) ? `0 0 15px ${color}40` : 'none'
+                    borderColor: (selected || data.isHighlight || data.isAnimating) ? color : `${color}30`,
+                    boxShadow: (selected || data.isHighlight || data.isAnimating) ? `0 0 15px ${color}40` : 'none'
                 }}
             >
-                <Icon size={28} color={color} style={{ filter: (selected || data.isHighlight) ? `drop-shadow(0 0 8px ${color})` : 'none' }} />
+                <Icon size={28} color={color} style={{ filter: (selected || data.isHighlight || data.isAnimating) ? `drop-shadow(0 0 8px ${color})` : 'none' }} />
             </div>
+            
+            {/* 三点菜单图标 */}
+            <AnimatePresence>
+                {showMenu && (
+                    <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-lg z-20 cursor-pointer transition-all hover:scale-110"
+                        style={{
+                            background: `linear-gradient(135deg, ${color}dd 0%, ${color}ff 100%)`,
+                            boxShadow: `0 4px 12px ${color}40, 0 0 0 2px rgba(255,255,255,0.2)`
+                        }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            const event = new CustomEvent('openNodeDetail', { detail: { nodeId: id } });
+                            window.dispatchEvent(event);
+                        }}
+                    >
+                        <MoreVertical size={15} className="text-white drop-shadow-sm" strokeWidth={2.5} />
+                    </motion.button>
+                )}
+            </AnimatePresence>
 
             <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 text-center w-32 pointer-events-none">
                 <p className={cn("text-[11px] font-bold tracking-wide transition-colors", (selected || data.isHighlight) ? 'text-white' : 'text-zinc-500')}>
@@ -483,6 +522,10 @@ function FlowEditorInner() {
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const { fitView, deleteElements, getNodes, getEdges, project } = useReactFlow();
+    
+    // 撤销/重做历史记录
+    const [history, setHistory] = useState<{ nodes: Node[], edges: Edge[] }[]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
 
     const [isEditMode, setIsEditMode] = useState(false);
     const [selectedSelection, setSelectedSelection] = useState<{ type: 'node' | 'edge', id: string, data: any } | null>(null);
@@ -526,19 +569,86 @@ function FlowEditorInner() {
         return () => clearTimeout(timer);
     }, [nodes, edges, fitView]);
 
+    // 节点动画回调
+    const handleNodeAnimate = useCallback((nodeId: string) => {
+        setNodes((nds) => nds.map(n => ({
+            ...n,
+            data: { ...n.data, isAnimating: n.id === nodeId }
+        })));
+        
+        // 500ms后取消动画
+        setTimeout(() => {
+            setNodes((nds) => nds.map(n => ({
+                ...n,
+                data: { ...n.data, isAnimating: false }
+            })));
+        }, 500);
+    }, [setNodes]);
+    
     // 初始化引擎
     if (!engineRef.current) {
-        engineRef.current = new FlowEngine((activeEdgeIds) => {
-            setEdges((eds) => eds.map(e => ({
-                ...e,
-                data: { ...e.data, isFlowing: activeEdgeIds.has(e.id) }
-            })));
-        });    
+        engineRef.current = new FlowEngine(
+            (activeEdgeIds) => {
+                setEdges((eds) => eds.map(e => ({
+                    ...e,
+                    data: { ...e.data, isFlowing: activeEdgeIds.has(e.id) }
+                })));
+            },
+            handleNodeAnimate
+        );    
 }
 
     // 更新引擎数据
     useEffect(() => {
         engineRef.current?.updateData(nodes, edges);
+    }, [nodes, edges]);
+    
+    // 保存历史记录
+    const saveHistory = useCallback(() => {
+        setHistory(prev => {
+            const newHistory = prev.slice(0, historyIndex + 1);
+            newHistory.push({ nodes: getNodes(), edges: getEdges() });
+            // 限制历史记录数量为50
+            if (newHistory.length > 50) newHistory.shift();
+            return newHistory;
+        });
+        setHistoryIndex(prev => Math.min(prev + 1, 49));
+    }, [historyIndex, getNodes, getEdges]);
+    
+    // Ctrl+Z 撤销功能
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                if (historyIndex > 0) {
+                    const prevState = history[historyIndex - 1];
+                    setNodes(prevState.nodes);
+                    setEdges(prevState.edges);
+                    setHistoryIndex(prev => prev - 1);
+                }
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                e.preventDefault();
+                if (historyIndex < history.length - 1) {
+                    const nextState = history[historyIndex + 1];
+                    setNodes(nextState.nodes);
+                    setEdges(nextState.edges);
+                    setHistoryIndex(prev => prev + 1);
+                }
+            }
+        };
+        
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [history, historyIndex, setNodes, setEdges]);
+    
+    // 监听节点/边变化，保存历史（防抖）
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (nodes.length > 0 || edges.length > 0) {
+                saveHistory();
+            }
+        }, 1000);
+        return () => clearTimeout(timer);
     }, [nodes, edges]);
 
     // ✅ 修复：使用防抖（Debounce）来保存内容，避免拖拽时频繁触发父组件重渲染导致死循环
@@ -612,11 +722,29 @@ function FlowEditorInner() {
         return { nodes: visitedNodes, edges: visitedEdges };
     }, []);
 
+    // 监听自定义事件打开节点详情
+    useEffect(() => {
+        const handleOpenDetail = (e: any) => {
+            const nodeId = e.detail?.nodeId;
+            if (nodeId) {
+                const node = getNodes().find(n => n.id === nodeId);
+                if (node) {
+                    // 打开文档面板时，关闭节点配置面板
+                    setSelectedSelection(null);
+                    setSelectedNodeForDetail({ id: node.id, data: node.data as CustomNodeData });
+                }
+            }
+        };
+        window.addEventListener('openNodeDetail', handleOpenDetail);
+        return () => window.removeEventListener('openNodeDetail', handleOpenDetail);
+    }, [getNodes]);
+    
     const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-        // 打开节点详情面板
-        setSelectedNodeForDetail({ id: node.id, data: node.data as CustomNodeData });
+        // 不再直接打开详情面板，改为通过三点菜单打开
         
         if (isEditMode) {
+            // 编辑模式下点击节点时，关闭文档面板，打开节点配置
+            setSelectedNodeForDetail(null);
             setSelectedSelection({ type: 'node', id: node.id, data: node.data });
         } else {
             const { nodes: downstreamNodes, edges: downstreamEdges } = getDownstreamElements(node.id, getNodes(), getEdges());
@@ -635,8 +763,8 @@ function FlowEditorInner() {
                 data: {
                     ...e.data,
                     isHighlight: downstreamEdges.has(e.id),
-                    isDimmed: !downstreamEdges.has(e.id),
-                    isFlowing: false
+                    isDimmed: !downstreamEdges.has(e.id)
+                    // 不设置 isFlowing: false，让引擎控制流动状态
                 }
             })));
 
@@ -659,6 +787,7 @@ function FlowEditorInner() {
 
     const onPaneClick = useCallback(() => {
         setSelectedSelection(null);
+        setSelectedNodeForDetail(null); // 点击空白画布时也关闭文档面板
         if (!isEditMode) {
             setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, isHighlight: false, isDimmed: false } })));
             setEdges(eds => eds.map(e => ({ ...e, data: { ...e.data, isHighlight: false, isDimmed: false } })));
@@ -729,9 +858,23 @@ function FlowEditorInner() {
     }, [project, setNodes]);
 
     const handleToggleEdit = useCallback(() => {
-        setIsEditMode(prev => !prev);
+        setIsEditMode(prev => {
+            const newEditMode = !prev;
+            // 退出编辑模式时，清除高亮和暗化效果，恢复数据流动
+            if (!newEditMode) {
+                setNodes(nds => nds.map(n => ({ 
+                    ...n, 
+                    data: { ...n.data, isHighlight: false, isDimmed: false } 
+                })));
+                setEdges(eds => eds.map(e => ({ 
+                    ...e, 
+                    data: { ...e.data, isHighlight: false, isDimmed: false } 
+                })));
+            }
+            return newEditMode;
+        });
         setSelectedSelection(null);
-    }, []);
+    }, [setNodes, setEdges]);
 
     // ✅ 修复：将 UI 组件包裹在 useMemo 中，防止拖拽时频繁重渲染导致的 UI 库报错
     const uiOverlay = useMemo(() => (
@@ -789,14 +932,16 @@ function FlowEditorInner() {
             </AnimatePresence>
 
             {/* 节点详情面板 */}
-            {selectedNodeForDetail && (
-                <NodeDetailPanel
-                    node={selectedNodeForDetail}
-                    isEditMode={isEditMode}
-                    onUpdateNode={updateNodeData}
-                    onClose={() => setSelectedNodeForDetail(null)}
-                />
-            )}
+            <AnimatePresence>
+                {selectedNodeForDetail && (
+                    <NodeDetailPanel
+                        node={selectedNodeForDetail}
+                        isEditMode={isEditMode}
+                        onUpdateNode={updateNodeData}
+                        onClose={() => setSelectedNodeForDetail(null)}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }

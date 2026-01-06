@@ -3,7 +3,10 @@ import type { ToolboxDocument, ToolboxRecord } from '@/types/dataflow'
 import { getAuthToken } from './authService'
 
 // 开发环境使用相对路径通过 Vite 代理，生产环境使用环境变量
-const TOOLBOX_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_TOOLBOX_API_URL || '')
+// 注意：生产环境的 VITE_TOOLBOX_API_URL 应该是完整的域名（如 http://mufengmufeng.cn）
+const TOOLBOX_BASE_URL = import.meta.env.DEV 
+  ? '' 
+  : (import.meta.env.VITE_TOOLBOX_API_URL || window.location.origin)
 
 // 文档缓存（避免重复请求）
 const documentCache = new Map<string, { document: ToolboxDocument; timestamp: number }>()

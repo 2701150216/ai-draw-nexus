@@ -229,7 +229,7 @@ export const aiService = {
    * Parse URL content and convert to markdown
    */
   async parseUrl(url: string): Promise<ParseUrlResponse> {
-    const response = await fetch(`${API_BASE_URL}/parse-url`, {
+    const response = await apiFetch(`${API_BASE_URL}/parse-url`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
