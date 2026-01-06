@@ -8,6 +8,9 @@ const TOOLBOX_BASE_URL = import.meta.env.DEV
   ? '' 
   : (import.meta.env.VITE_TOOLBOX_API_URL || window.location.origin)
 
+// API路径前缀：从环境变量读取，默认值为 /api
+const API_PREFIX = import.meta.env.VITE_TOOLBOX_API_PREFIX || '/api'
+
 // 文档缓存（避免重复请求）
 const documentCache = new Map<string, { document: ToolboxDocument; timestamp: number }>()
 const CACHE_DURATION = 5 * 60 * 1000 // 5分钟缓存
@@ -45,7 +48,7 @@ export const toolboxService = {
    */
   async listDocuments(): Promise<ToolboxDocument[]> {
     try {
-      const response = await fetch(`${TOOLBOX_BASE_URL}/dev-api/api/km/data-documents?pageSize=1000`, {
+      const response = await fetch(`${TOOLBOX_BASE_URL}${API_PREFIX}/km/data-documents?pageSize=1000`, {
         method: 'GET',
         headers: getHeaders(),
         credentials: 'include', // 携带 cookie 用于权限验证
@@ -86,7 +89,7 @@ export const toolboxService = {
       }
 
       console.log(`从服务器获取文档: ${id}`)
-      const response = await fetch(`${TOOLBOX_BASE_URL}/dev-api/api/km/data-documents/${id}`, {
+      const response = await fetch(`${TOOLBOX_BASE_URL}${API_PREFIX}/km/data-documents/${id}`, {
         method: 'GET',
         headers: getHeaders(),
         credentials: 'include',
@@ -129,7 +132,7 @@ export const toolboxService = {
       if (params?.pageSize) queryParams.append('pageSize', String(params.pageSize))
       if (params?.search) queryParams.append('search', params.search)
       
-      const url = `${TOOLBOX_BASE_URL}/dev-api/api/km/data-documents/${id}/records?${queryParams}`
+      const url = `${TOOLBOX_BASE_URL}${API_PREFIX}/km/data-documents/${id}/records?${queryParams}`
       console.log(`获取记录: ${url}`)
       
       const response = await fetch(url, {
@@ -169,7 +172,7 @@ export const toolboxService = {
    */
   async searchDocuments(query: string): Promise<ToolboxDocument[]> {
     try {
-      const response = await fetch(`${TOOLBOX_BASE_URL}/dev-api/api/km/data-documents?search=${encodeURIComponent(query)}&pageSize=100`, {
+      const response = await fetch(`${TOOLBOX_BASE_URL}${API_PREFIX}/km/data-documents?search=${encodeURIComponent(query)}&pageSize=100`, {
         method: 'GET',
         headers: getHeaders(),
         credentials: 'include',
