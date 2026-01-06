@@ -45,7 +45,7 @@ export const toolboxService = {
    */
   async listDocuments(): Promise<ToolboxDocument[]> {
     try {
-      const response = await fetch(`${TOOLBOX_BASE_URL}/api/km/data-documents?pageSize=1000`, {
+      const response = await fetch(`${TOOLBOX_BASE_URL}/dev-api/km/data-documents?pageSize=1000`, {
         method: 'GET',
         headers: getHeaders(),
         credentials: 'include', // 携带 cookie 用于权限验证
@@ -86,7 +86,7 @@ export const toolboxService = {
       }
 
       console.log(`从服务器获取文档: ${id}`)
-      const response = await fetch(`${TOOLBOX_BASE_URL}/api/km/data-documents/${id}`, {
+      const response = await fetch(`${TOOLBOX_BASE_URL}/dev-api/km/data-documents/${id}`, {
         method: 'GET',
         headers: getHeaders(),
         credentials: 'include',
@@ -129,7 +129,7 @@ export const toolboxService = {
       if (params?.pageSize) queryParams.append('pageSize', String(params.pageSize))
       if (params?.search) queryParams.append('search', params.search)
       
-      const url = `${TOOLBOX_BASE_URL}/api/km/data-documents/${id}/records?${queryParams}`
+      const url = `${TOOLBOX_BASE_URL}/dev-api/km/data-documents/${id}/records?${queryParams}`
       console.log(`获取记录: ${url}`)
       
       const response = await fetch(url, {
@@ -169,7 +169,7 @@ export const toolboxService = {
    */
   async searchDocuments(query: string): Promise<ToolboxDocument[]> {
     try {
-      const response = await fetch(`${TOOLBOX_BASE_URL}/api/km/data-documents?search=${encodeURIComponent(query)}&pageSize=100`, {
+      const response = await fetch(`${TOOLBOX_BASE_URL}/dev-api/km/data-documents?search=${encodeURIComponent(query)}&pageSize=100`, {
         method: 'GET',
         headers: getHeaders(),
         credentials: 'include',
