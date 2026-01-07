@@ -9,6 +9,7 @@ interface RecordSelectorProps {
   onSelect: (records: ToolboxRecordRef[]) => void
   selectedRecordIds?: string[]
   multiple?: boolean
+  theme?: 'dark' | 'light'
 }
 
 export const RecordSelector: React.FC<RecordSelectorProps> = ({
@@ -17,7 +18,9 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
   onSelect,
   selectedRecordIds = [],
   multiple = true,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light'
   const [documents, setDocuments] = useState<ToolboxDocument[]>([])
   const [selectedDocument, setSelectedDocument] = useState<ToolboxDocument | null>(null)
   const [records, setRecords] = useState<ToolboxRecord[]>([])
@@ -153,29 +156,33 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col"
+        className={
+          isLight
+            ? "bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col border border-slate-200"
+            : "bg-[#0f0f0f] rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col border border-white/10"
+        }
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-green-50">
+        <div className={isLight ? "flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-green-50" : "flex items-center justify-between px-6 py-4 border-b border-white/10 bg-gradient-to-r from-[#0b1220] via-[#0e1a2c] to-[#0b1220]"}>
           <div className="flex items-center gap-3">
             {selectedDocument ? (
               <>
                 <button
                   onClick={handleBackToDocuments}
-                  className="p-1.5 hover:bg-white/80 rounded-lg transition-colors"
+                  className={isLight ? "p-1.5 hover:bg-white/80 rounded-lg transition-colors" : "p-1.5 hover:bg-white/10 rounded-lg transition-colors"}
                 >
-                  <ChevronRight className="w-5 h-5 rotate-180 text-gray-700" />
+                  <ChevronRight className={isLight ? "w-5 h-5 rotate-180 text-slate-700" : "w-5 h-5 rotate-180 text-white/80"} />
                 </button>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center text-white shadow-sm">
                     <Database className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-800">
+                    <h2 className={isLight ? "text-lg font-semibold text-slate-900" : "text-lg font-semibold text-white"}>
                       {selectedDocument.title}
                     </h2>
-                    <p className="text-xs text-gray-600 mt-0.5">
+                    <p className={isLight ? "text-xs text-slate-600 mt-0.5" : "text-xs text-white/70 mt-0.5"}>
                       选择需要关联的记录
                     </p>
                   </div>
@@ -187,24 +194,24 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
                   <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800">选择数据文档</h2>
-                  <p className="text-xs text-gray-600 mt-0.5">选择包含数据记录的文档</p>
+                  <h2 className={isLight ? "text-lg font-semibold text-slate-900" : "text-lg font-semibold text-white"}>选择数据文档</h2>
+                  <p className={isLight ? "text-xs text-slate-600 mt-0.5" : "text-xs text-white/70 mt-0.5"}>选择包含数据记录的文档</p>
                 </div>
               </div>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-white/80 rounded-lg transition-colors"
+            className={isLight ? "p-1.5 hover:bg-white/80 rounded-lg transition-colors" : "p-1.5 hover:bg-white/10 rounded-lg transition-colors"}
           >
-            <X className="w-5 h-5 text-gray-600" />
+            <X className={isLight ? "w-5 h-5 text-slate-600" : "w-5 h-5 text-white/80"} />
           </button>
         </div>
 
         {/* 搜索栏 */}
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div className={isLight ? "px-6 py-4 bg-slate-50 border-b border-slate-200" : "px-6 py-4 bg-[#0b0b0b] border-b border-white/10"}>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className={isLight ? "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" : "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/50"} />
             <input
               type="text"
               value={selectedDocument ? recordSearchQuery : searchQuery}
@@ -221,7 +228,7 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
                 }
               }}
               placeholder={selectedDocument ? '搜索记录内容...' : '搜索文档标题...'}
-              className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
+              className={isLight ? "w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm text-slate-800" : "w-full pl-10 pr-10 py-2.5 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#0f0f0f] text-sm text-white"}
             />
             {((selectedDocument && recordSearchQuery) || (!selectedDocument && searchQuery)) && (
               <button
@@ -233,7 +240,7 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
                     setSearchQuery('')
                   }
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className={isLight ? "absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" : "absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -242,7 +249,7 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
         </div>
 
         {/* 内容区 */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+        <div className={isLight ? "flex-1 overflow-y-auto p-6 bg-slate-50 text-slate-900" : "flex-1 overflow-y-auto p-6 bg-[#0b0b0b] text-white"}>
           {!selectedDocument ? (
             // 文档列表
             loading ? (
@@ -250,7 +257,7 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
                 <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
               </div>
             ) : filteredDocuments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+              <div className={isLight ? "flex flex-col items-center justify-center h-64 text-slate-400" : "flex flex-col items-center justify-center h-64 text-white/50"}>
                 <FileText className="w-16 h-16 mb-3" />
                 <p className="text-sm">未找到文档</p>
               </div>
@@ -260,18 +267,18 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
                   <div
                     key={doc.id}
                     onClick={() => handleDocumentClick(doc)}
-                    className="bg-white p-4 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-blue-300 hover:shadow-sm"
+                    className={isLight ? "bg-white p-4 rounded-lg border border-slate-200 cursor-pointer transition-all hover:border-blue-300 hover:shadow-sm" : "bg-[#101010] p-4 rounded-lg border border-white/10 cursor-pointer transition-all hover:border-blue-400/60 hover:shadow-lg hover:shadow-blue-500/10"}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <FileText className="w-5 h-5 text-blue-600" />
+                      <div className={isLight ? "w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0" : "w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0"}>
+                        <FileText className={isLight ? "w-5 h-5 text-blue-600" : "w-5 h-5 text-blue-300"} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">{doc.title}</h3>
+                        <h3 className={isLight ? "font-medium text-slate-900 truncate" : "font-medium text-white truncate"}>{doc.title}</h3>
                         {doc.description && (
-                          <p className="mt-1 text-sm text-gray-500 line-clamp-2">{doc.description}</p>
+                          <p className={isLight ? "mt-1 text-sm text-slate-500 line-clamp-2" : "mt-1 text-sm text-white/70 line-clamp-2"}>{doc.description}</p>
                         )}
-                        <div className="mt-2 flex items-center gap-4 text-xs text-gray-400">
+                        <div className={isLight ? "mt-2 flex items-center gap-4 text-xs text-slate-400" : "mt-2 flex items-center gap-4 text-xs text-white/50"}>
                           {doc.recordCount !== undefined && (
                             <span className="flex items-center gap-1">
                               <Database className="w-3 h-3" />
@@ -281,7 +288,7 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
                           <span>更新于 {new Date(doc.updatedAt).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-2" />
+                      <ChevronRight className={isLight ? "w-5 h-5 text-slate-400 flex-shrink-0 mt-2" : "w-5 h-5 text-white/60 flex-shrink-0 mt-2"} />
                     </div>
                   </div>
                 ))}
@@ -295,7 +302,7 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
                   <Loader2 className="w-8 h-8 animate-spin text-green-500" />
                 </div>
               ) : records.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                <div className={isLight ? "flex flex-col items-center justify-center h-64 text-slate-400" : "flex flex-col items-center justify-center h-64 text-white/50"}>
                   <Database className="w-16 h-16 mb-3" />
                   <p className="text-sm">暂无记录</p>
                 </div>
@@ -313,17 +320,31 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
                       <div
                         key={recordId}
                         onClick={() => toggleRecordSelection(record)}
-                        className={`bg-white p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                          isSelected
-                            ? 'border-green-500 bg-green-50'
-                            : 'border-gray-200 hover:border-green-300 hover:shadow-sm'
-                        }`}
+                        className={
+                          isLight
+                            ? `bg-white p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                                isSelected
+                                  ? 'border-green-500 bg-green-50'
+                                  : 'border-slate-200 hover:border-green-300 hover:shadow-sm'
+                              }`
+                            : `bg-[#101010] p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                                isSelected
+                                  ? 'border-green-400 bg-green-900/20'
+                                  : 'border-white/10 hover:border-green-400/60 hover:shadow-lg hover:shadow-green-500/10'
+                              }`
+                        }
                       >
                         <div className="flex items-start gap-3">
                           <div
-                            className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center ${
-                              isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'
-                            }`}
+                            className={
+                              isLight
+                                ? `flex-shrink-0 w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center ${
+                                    isSelected ? 'bg-green-500 border-green-500' : 'border-slate-300'
+                                  }`
+                                : `flex-shrink-0 w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center ${
+                                    isSelected ? 'bg-green-500 border-green-500' : 'border-white/20'
+                                  }`
+                            }
                           >
                             {isSelected && <Check className="w-3 h-3 text-white" />}
                           </div>
@@ -333,15 +354,15 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
                               <div className="grid grid-cols-3 gap-3">
                                 {displayFields.map((field: any) => (
                                   <div key={field.name} className="min-w-0">
-                                    <div className="text-xs text-gray-500 truncate font-medium">{field.name}</div>
-                                    <div className="text-sm text-gray-900 truncate mt-0.5">
+                                    <div className={isLight ? "text-xs text-slate-500 truncate font-medium" : "text-xs text-white/60 truncate font-medium"}>{field.name}</div>
+                                    <div className={isLight ? "text-sm text-slate-900 truncate mt-0.5" : "text-sm text-white truncate mt-0.5"}>
                                       {renderFieldValue(record[field.name])}
                                     </div>
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <div className="text-sm text-gray-500">
+                              <div className={isLight ? "text-sm text-slate-500" : "text-sm text-white/60"}>
                                 {JSON.stringify(record).substring(0, 100)}...
                               </div>
                             )}
@@ -355,8 +376,8 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
 
               {/* 分页 */}
               {totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-between px-4 py-3 bg-white rounded-lg border border-gray-200">
-                  <div className="text-sm text-gray-600">
+                <div className={isLight ? "mt-4 flex items-center justify-between px-4 py-3 bg-white rounded-lg border border-slate-200" : "mt-4 flex items-center justify-between px-4 py-3 bg-[#101010] rounded-lg border border-white/10"}>
+                  <div className={isLight ? "text-sm text-slate-600" : "text-sm text-white/70"}>
                     显示 {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalRecords)} 条，
                     共 {totalRecords} 条
                   </div>
@@ -364,17 +385,17 @@ export const RecordSelector: React.FC<RecordSelectorProps> = ({
                     <button
                       onClick={() => loadRecords(selectedDocument, currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={isLight ? "px-3 py-1.5 text-sm border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" : "px-3 py-1.5 text-sm border border-white/10 rounded-md hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"}
                     >
                       上一页
                     </button>
-                    <span className="text-sm text-gray-600">
+                    <span className={isLight ? "text-sm text-slate-600" : "text-sm text-white/70"}>
                       {currentPage} / {totalPages}
                     </span>
                     <button
                       onClick={() => loadRecords(selectedDocument, currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={isLight ? "px-3 py-1.5 text-sm border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" : "px-3 py-1.5 text-sm border border-white/10 rounded-md hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"}
                     >
                       下一页
                     </button>

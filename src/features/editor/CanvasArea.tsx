@@ -17,9 +17,10 @@ export interface CanvasAreaRef {
 
 interface CanvasAreaProps {
   onReady?: () => void
+  dataflowTheme?: 'dark' | 'light'
 }
 
-export const CanvasArea = forwardRef<CanvasAreaRef, CanvasAreaProps>(function CanvasArea({ onReady }, ref) {
+export const CanvasArea = forwardRef<CanvasAreaRef, CanvasAreaProps>(function CanvasArea({ onReady, dataflowTheme }, ref) {
   const currentContent = useEditorStore((s) => s.currentContent)
   const currentProject = useEditorStore((s) => s.currentProject)
   const engineType = useEditorStore(selectEngineType)
@@ -243,7 +244,7 @@ export const CanvasArea = forwardRef<CanvasAreaRef, CanvasAreaProps>(function Ca
       case 'dataflow':
         return (
           <div ref={dataflowRef} className="h-full w-full">
-            <DataflowEditor />
+            <DataflowEditor theme={dataflowTheme} />
           </div>
         )
       default:

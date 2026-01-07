@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Menu, History, Pencil, Check, X, Plus, FolderOpen, Home, Save, Download, Image, Code, FileText, ChevronRight } from 'lucide-react'
+import { Menu, History, Pencil, Check, X, Plus, FolderOpen, Home, Save, Download, Image, Code, FileText, ChevronRight, Sun, Moon } from 'lucide-react'
 import { Button, Input, Loading } from '@/components/ui'
 import { ChatPanel } from '@/features/chat/ChatPanel'
 import { CanvasArea, type CanvasAreaRef } from '@/features/editor/CanvasArea'
@@ -37,6 +37,10 @@ export function EditorPage() {
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [editedTitle, setEditedTitle] = useState('')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [dataflowTheme, setDataflowTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('ai-draw-nexus.dataflowTheme')
+    return saved === 'light' ? 'light' : 'dark'
+  })
   const titleInputRef = useRef<HTMLInputElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<CanvasAreaRef>(null)
@@ -49,6 +53,14 @@ export function EditorPage() {
   useEffect(() => {
     localStorage.setItem('ai-draw-nexus.chatPanelCollapsed', String(isChatPanelCollapsed))
   }, [isChatPanelCollapsed])
+
+  useEffect(() => {
+    localStorage.setItem('ai-draw-nexus.dataflowTheme', dataflowTheme)
+  }, [dataflowTheme])
+
+  const toggleDataflowTheme = () => {
+    setDataflowTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
+  }
 
   // Load project on mount
   useEffect(() => {
@@ -495,6 +507,18 @@ export function EditorPage() {
             <Save className="mr-2 h-4 w-4" />
             保存
           </Button>
+          {currentProject?.engineType === 'dataflow' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleDataflowTheme}
+              className="gap-1.5"
+              title="切换主题"
+            >
+              {dataflowTheme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              <span className="text-xs">{dataflowTheme === 'dark' ? '暗黑' : '明亮'}</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -529,7 +553,7 @@ export function EditorPage() {
 
         {/* Center: Canvas */}
         <div className="relative flex-1">
-          <CanvasArea ref={canvasRef} onReady={handleCanvasReady} />
+          <CanvasArea ref={canvasRef} onReady={handleCanvasReady} dataflowTheme={dataflowTheme} />
           {/* Version Panel (floating) */}
           {isVersionPanelOpen && (
             <VersionPanel onClose={() => setIsVersionPanelOpen(false)} />

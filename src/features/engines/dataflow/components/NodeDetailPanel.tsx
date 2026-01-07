@@ -14,6 +14,7 @@ interface NodeDetailPanelProps {
   isEditMode: boolean
   onUpdateNode: (nodeId: string, data: Partial<DataflowNodeData>) => void
   onClose: () => void
+  theme?: 'dark' | 'light'
 }
 
 export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
@@ -21,7 +22,9 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
   isEditMode,
   onUpdateNode,
   onClose,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light'
   const [showRecordSelector, setShowRecordSelector] = useState(false)
   const [viewingRecord, setViewingRecord] = useState<ToolboxRecordRef | null>(null)
   const [editingDescription, setEditingDescription] = useState(false)
@@ -86,11 +89,15 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
         initial={{ width: 0, opacity: 0, x: 50 }}
         animate={{ width: 420, opacity: 1, x: 0 }}
         exit={{ width: 0, opacity: 0, x: 50 }}
-        className="absolute right-0 top-0 bottom-0 bg-gray-50 shadow-2xl z-50 flex flex-col overflow-hidden"
+        className={
+          isLight
+            ? "absolute right-0 top-0 bottom-0 bg-white text-slate-900 shadow-2xl z-50 flex flex-col overflow-hidden border-l border-slate-200"
+            : "absolute right-0 top-0 bottom-0 bg-[#111] text-white shadow-2xl z-50 flex flex-col overflow-hidden border-l border-white/10"
+        }
       >
         <div className="w-[420px] flex flex-col h-full">
           {/* 头部 */}
-          <div className="flex items-center justify-between p-5 bg-white border-b border-gray-200 flex-shrink-0">
+          <div className={isLight ? "flex items-center justify-between p-5 bg-slate-50 border-b border-slate-200 flex-shrink-0" : "flex items-center justify-between p-5 bg-[#161616] border-b border-white/10 flex-shrink-0"}>
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0 shadow-sm"
@@ -99,61 +106,61 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
                 <FileText className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-base font-semibold text-gray-800 truncate">
+                <h2 className={isLight ? "text-base font-semibold text-slate-900 truncate" : "text-base font-semibold text-white truncate"}>
                   {node.data.label}
                 </h2>
                 {node.data.subLabel && (
-                  <p className="text-xs text-gray-500 truncate mt-0.5">{node.data.subLabel}</p>
+                  <p className={isLight ? "text-xs text-slate-500 truncate mt-0.5" : "text-xs text-white/70 truncate mt-0.5"}>{node.data.subLabel}</p>
                 )}
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 hover:bg-gray-100 rounded-md transition-colors flex-shrink-0"
+              className={isLight ? "p-1.5 hover:bg-slate-100 rounded-md transition-colors flex-shrink-0" : "p-1.5 hover:bg-white/10 rounded-md transition-colors flex-shrink-0"}
             >
-              <X className="w-4 h-4 text-gray-500" />
+              <X className={isLight ? "w-4 h-4 text-slate-500" : "w-4 h-4 text-white/80"} />
             </button>
           </div>
 
           {/* 内容区 */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className={isLight ? "flex-1 overflow-y-auto p-4 space-y-3 bg-white text-slate-900" : "flex-1 overflow-y-auto p-4 space-y-3 bg-[#0d0d0d] text-white"}>
             {/* 节点说明 */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className={isLight ? "bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden" : "bg-[#151515] rounded-lg border border-white/10 overflow-hidden"}>
               <button
                 onClick={() => toggleSection('description')}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+                className={isLight ? "w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors" : "w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"}
               >
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-600" />
-                  <span className="font-medium text-sm text-gray-700">节点说明</span>
+                  <FileText className={isLight ? "w-4 h-4 text-blue-600" : "w-4 h-4 text-blue-400"} />
+                  <span className={isLight ? "font-medium text-sm text-slate-800" : "font-medium text-sm text-white"}>节点说明</span>
                 </div>
                 {expandedSections.description ? (
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                  <ChevronDown className={isLight ? "w-4 h-4 text-slate-400" : "w-4 h-4 text-white/60"} />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                  <ChevronRight className={isLight ? "w-4 h-4 text-slate-400" : "w-4 h-4 text-white/60"} />
                 )}
               </button>
 
               {expandedSections.description && (
-                <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
+                <div className={isLight ? "px-4 py-3 border-t border-slate-100 bg-slate-50" : "px-4 py-3 border-t border-white/5 bg-[#101010]"}>
                   {editingDescription ? (
                     <div className="space-y-3">
                       <textarea
                         value={descriptionValue}
                         onChange={(e) => setDescriptionValue(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm min-h-[120px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                        className={isLight ? "w-full px-3 py-2 border border-slate-200 rounded-md text-sm min-h-[120px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-800" : "w-full px-3 py-2 border border-white/10 rounded-md text-sm min-h-[120px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#0d0d0d] text-white"}
                         placeholder="输入节点说明..."
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={handleSaveDescription}
-                          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                          className={isLight ? "px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors" : "px-3 py-1.5 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition-colors"}
                         >
                           保存
                         </button>
                         <button
                           onClick={() => setEditingDescription(false)}
-                          className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors"
+                          className={isLight ? "px-3 py-1.5 bg-white border border-slate-200 text-slate-700 text-sm rounded-md hover:bg-slate-50 transition-colors" : "px-3 py-1.5 bg-[#0d0d0d] border border-white/10 text-white text-sm rounded-md hover:bg-white/5 transition-colors"}
                         >
                           取消
                         </button>
@@ -163,13 +170,13 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
                     <div>
                       {node.data.description ? (
                         <div className="space-y-3">
-                          <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
+                          <p className={isLight ? "text-sm text-slate-700 whitespace-pre-wrap leading-relaxed" : "text-sm text-white/80 whitespace-pre-wrap leading-relaxed"}>
                             {node.data.description}
                           </p>
                           {isEditMode && (
                             <button
                               onClick={handleStartEditDescription}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                              className={isLight ? "inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors" : "inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-400 hover:bg-white/5 rounded-md transition-colors"}
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                               编辑
@@ -178,11 +185,11 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
                         </div>
                       ) : (
                         <div className="text-center py-6">
-                          <p className="text-sm text-gray-400 mb-3">暂无说明</p>
+                          <p className={isLight ? "text-sm text-slate-400 mb-3" : "text-sm text-white/50 mb-3"}>暂无说明</p>
                           {isEditMode && (
                             <button
                               onClick={handleStartEditDescription}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                              className={isLight ? "inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors" : "inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-400 hover:bg-white/5 rounded-md transition-colors"}
                             >
                               <Plus className="w-3.5 h-3.5" />
                               添加说明
@@ -197,49 +204,49 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
             </div>
 
             {/* 关联记录 */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className={isLight ? "bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden" : "bg-[#151515] rounded-lg border border-white/10 overflow-hidden"}>
               <button
                 onClick={() => toggleSection('records')}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+                className={isLight ? "w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors" : "w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"}
               >
                 <div className="flex items-center gap-2">
-                  <Database className="w-4 h-4 text-green-600" />
-                  <span className="font-medium text-sm text-gray-700">关联数据记录</span>
+                  <Database className={isLight ? "w-4 h-4 text-green-600" : "w-4 h-4 text-green-400"} />
+                  <span className={isLight ? "font-medium text-sm text-slate-800" : "font-medium text-sm text-white"}>关联数据记录</span>
                   {node.data.linkedRecords && node.data.linkedRecords.length > 0 && (
-                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                    <span className={isLight ? "px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium" : "px-2 py-0.5 bg-green-500/20 text-green-200 text-xs rounded-full font-medium"}>
                       {node.data.linkedRecords.length}
                     </span>
                   )}
                 </div>
                 {expandedSections.records ? (
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                  <ChevronDown className={isLight ? "w-4 h-4 text-slate-400" : "w-4 h-4 text-white/60"} />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                  <ChevronRight className={isLight ? "w-4 h-4 text-slate-400" : "w-4 h-4 text-white/60"} />
                 )}
               </button>
 
               {expandedSections.records && (
-                <div className="px-4 py-3 border-t border-gray-100 bg-gray-50 space-y-2">
+                <div className={isLight ? "px-4 py-3 border-t border-slate-100 bg-slate-50 space-y-2" : "px-4 py-3 border-t border-white/5 bg-[#101010] space-y-2"}>
                   {node.data.linkedRecords && node.data.linkedRecords.length > 0 ? (
                     <div className="space-y-2">
                       {node.data.linkedRecords.map((record) => (
                         <div
                           key={`${record.documentId}-${record.recordId}`}
-                          className="bg-white p-3 rounded-md border border-gray-200 hover:border-green-300 hover:shadow-sm transition-all"
+                          className={isLight ? "bg-white p-3 rounded-md border border-slate-200 hover:border-green-300 hover:shadow-sm transition-all" : "bg-[#0f0f0f] p-3 rounded-md border border-white/10 hover:border-green-400/60 hover:shadow-lg hover:shadow-green-500/10 transition-all"}
                         >
                           <div className="flex items-start gap-2">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
-                                <Database className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-                                <span className="text-xs text-gray-500 truncate">
+                                <Database className={isLight ? "w-3.5 h-3.5 text-green-600 flex-shrink-0" : "w-3.5 h-3.5 text-green-400 flex-shrink-0"} />
+                                <span className={isLight ? "text-xs text-slate-500 truncate" : "text-xs text-white/60 truncate"}>
                                   {record.documentTitle}
                                 </span>
                               </div>
                               <div className="space-y-1.5">
                                 {Object.entries(record.recordData).slice(0, 2).map(([key, value]) => (
                                   <div key={key} className="text-xs">
-                                    <span className="text-gray-500">{key}:</span>{' '}
-                                    <span className="text-gray-700 font-medium">
+                                    <span className={isLight ? "text-slate-500" : "text-white/60"}>{key}:</span>{' '}
+                                    <span className={isLight ? "text-slate-800 font-medium" : "text-white font-medium"}>
                                       {typeof value === 'object' 
                                         ? JSON.stringify(value).substring(0, 40) + '...'
                                         : String(value).substring(0, 40)
@@ -248,10 +255,10 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
                                   </div>
                                 ))}
                               </div>
-                              <div className="flex items-center gap-3 mt-3 pt-2 border-t border-gray-100">
+                              <div className={isLight ? "flex items-center gap-3 mt-3 pt-2 border-t border-slate-100" : "flex items-center gap-3 mt-3 pt-2 border-t border-white/10"}>
                                 <button
                                   onClick={() => setViewingRecord(record)}
-                                  className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium"
+                                  className={isLight ? "text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium" : "text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium"}
                                 >
                                   <Eye className="w-3.5 h-3.5" />
                                   查看
@@ -259,7 +266,7 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
                                 {isEditMode && (
                                   <button
                                     onClick={() => handleRemoveRecord(record.documentId, record.recordId)}
-                                    className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1 ml-auto font-medium"
+                                    className={isLight ? "text-xs text-red-600 hover:text-red-700 flex items-center gap-1 ml-auto font-medium" : "text-xs text-red-400 hover:text-red-300 flex items-center gap-1 ml-auto font-medium"}
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                     移除
@@ -273,81 +280,18 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
                     </div>
                   ) : (
                     <div className="text-center py-6">
-                      <Database className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-sm text-gray-400">暂无关联记录</p>
+                      <Database className={isLight ? "w-8 h-8 text-slate-300 mx-auto mb-2" : "w-8 h-8 text-white/40 mx-auto mb-2"} />
+                      <p className={isLight ? "text-sm text-slate-400" : "text-sm text-white/60"}>暂无关联记录</p>
                     </div>
                   )}
 
                   {isEditMode && (
                     <button
                       onClick={() => setShowRecordSelector(true)}
-                      className="w-full mt-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 hover:border-green-400 transition-colors flex items-center justify-center gap-1.5"
+                      className={isLight ? "w-full mt-2 px-3 py-2 bg-white border border-slate-200 text-slate-700 text-sm rounded-md hover:bg-slate-50 hover:border-green-400 transition-colors flex items-center justify-center gap-1.5" : "w-full mt-2 px-3 py-2 bg-[#0d0d0d] border border-white/10 text-white text-sm rounded-md hover:bg-white/5 hover:border-green-400/60 transition-colors flex items-center justify-center gap-1.5"}
                     >
                       <Plus className="w-4 h-4" />
                       添加记录
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 标签 */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <button
-                onClick={() => toggleSection('tags')}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-purple-600" />
-                  <span className="font-medium text-sm text-gray-700">标签</span>
-                  {node.data.tags && node.data.tags.length > 0 && (
-                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
-                      {node.data.tags.length}
-                    </span>
-                  )}
-                </div>
-                {expandedSections.tags ? (
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                )}
-              </button>
-
-              {expandedSections.tags && (
-                <div className="px-4 py-3 border-t border-gray-100 bg-gray-50 space-y-2">
-                  {node.data.tags && node.data.tags.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {node.data.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-100 text-purple-700 text-xs rounded-md font-medium"
-                        >
-                          {tag}
-                          {isEditMode && (
-                            <button
-                              onClick={() => handleRemoveTag(tag)}
-                              className="hover:bg-purple-200 rounded p-0.5 transition-colors"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6">
-                      <Tag className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-sm text-gray-400">暂无标签</p>
-                    </div>
-                  )}
-
-                  {isEditMode && (
-                    <button
-                      onClick={handleAddTag}
-                      className="w-full mt-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 hover:border-purple-400 transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <Plus className="w-4 h-4" />
-                      添加标签
                     </button>
                   )}
                 </div>
@@ -363,6 +307,7 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
         onClose={() => setShowRecordSelector(false)}
         onSelect={handleAddRecords}
         selectedRecordIds={node.data.linkedRecords?.map(r => `${r.documentId}-${r.recordId}`) || []}
+        theme={theme}
       />
 
       {/* 记录查看器 */}
@@ -370,6 +315,7 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
         <RecordViewer
           recordRef={viewingRecord}
           onClose={() => setViewingRecord(null)}
+          theme={theme}
         />
       )}
     </>
