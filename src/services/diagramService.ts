@@ -1,5 +1,5 @@
 import type { EngineType } from '@/types'
-import { apiClient } from '@/lib/apiClient'
+import { apiClient, ensureAuth } from '@/lib/apiClient'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/dev-api/ai'
 
@@ -29,6 +29,7 @@ export const diagramService = {
       throw new Error(err || '保存失败')
     }
     const data = await res.json()
+    ensureAuth(data)
     // 兼容 AjaxResult 包装和直返数据
     return data?.data ?? data
   },
@@ -42,6 +43,7 @@ export const diagramService = {
       throw new Error(err || '查询失败')
     }
     const data = await res.json()
+    ensureAuth(data)
     // 兼容 AjaxResult 包装
     return data?.data ?? data
   },
@@ -55,6 +57,7 @@ export const diagramService = {
       throw new Error(err || '查询失败')
     }
     const data = await res.json()
+    ensureAuth(data)
     return data?.data ?? data
   },
 }

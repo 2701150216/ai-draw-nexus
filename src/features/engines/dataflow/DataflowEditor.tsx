@@ -149,12 +149,21 @@ class FlowEngine {
 }
 
 // --- 1. 自定义节点组件 ---
-const CustomNode = React.memo(({ data, selected, id }: { data: CustomNodeData; selected: boolean; id: string }) => {
+const CustomNode = React.memo(({ data, selected, id, isLight = false }: { data: CustomNodeData; selected: boolean; id: string; isLight?: boolean }) => {
     const [showMenu, setShowMenu] = useState(false);
     const Icon = ICON_MAP[data.iconKey] || Cpu;
-    const color = data.color || '#fff';
+    const color = data.color || (isLight ? '#3b82f6' : '#fff');
+    const fillStyle = isLight
+        ? {
+            background: `linear-gradient(145deg, ${color}22, #ffffff)`,
+        }
+        : {
+            background: `linear-gradient(145deg, ${color}33, #0f1115)`,
+        };
     const opacityClass = data.isDimmed ? 'opacity-20 grayscale' : 'opacity-100';
-    const highlightClass = data.isHighlight ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : '';
+    const highlightClass = data.isHighlight
+        ? (isLight ? 'ring-2 ring-sky-200 ring-offset-2 ring-offset-white' : 'ring-2 ring-white ring-offset-2 ring-offset-black')
+        : '';
     const animatingClass = data.isAnimating ? 'animate-pulse scale-110' : '';
 
     const connectionNodeId = useStore(connectionNodeIdSelector);
@@ -190,16 +199,26 @@ const CustomNode = React.memo(({ data, selected, id }: { data: CustomNodeData; s
 
             <div
                 className={cn(
-                    "relative w-16 h-16 rounded-2xl flex items-center justify-center bg-[#0a0a0a] border-2 transition-all duration-300 z-10",
+                    "relative w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-300 z-10",
+                    isLight ? "bg-white border-[#e2e8f0]" : "bg-[#0a0a0a] border-[#1f2937]",
                     highlightClass,
                     animatingClass
                 )}
                 style={{
-                    borderColor: (selected || data.isHighlight || data.isAnimating) ? color : `${color}30`,
-                    boxShadow: (selected || data.isHighlight || data.isAnimating) ? `0 0 15px ${color}40` : 'none'
+                    ...(fillStyle || {}),
+                    borderColor: (selected || data.isHighlight || data.isAnimating)
+                        ? color
+                        : (isLight ? `${color}44` : `${color}44`),
+                    boxShadow: (selected || data.isHighlight || data.isAnimating)
+                        ? (isLight ? `0 8px 22px rgba(59,130,246,0.18)` : `0 0 15px ${color}40`)
+                        : (isLight ? '0 6px 14px rgba(15,23,42,0.08)' : 'none')
                 }}
             >
-                <Icon size={28} color={color} style={{ filter: (selected || data.isHighlight || data.isAnimating) ? `drop-shadow(0 0 8px ${color})` : 'none' }} />
+                <Icon
+                    size={28}
+                    color={color}
+                    style={{ filter: (selected || data.isHighlight || data.isAnimating) ? `drop-shadow(0 0 8px ${color})` : 'none' }}
+                />
             </div>
             
             {/* 三点菜单图标 */}
@@ -211,8 +230,9 @@ const CustomNode = React.memo(({ data, selected, id }: { data: CustomNodeData; s
                         exit={{ opacity: 0, scale: 0.8 }}
                         className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-lg z-20 cursor-pointer transition-all hover:scale-110"
                         style={{
-                            background: `linear-gradient(135deg, ${color}dd 0%, ${color}ff 100%)`,
-                            boxShadow: `0 4px 12px ${color}40, 0 0 0 2px rgba(255,255,255,0.2)`
+                            background: color,
+                            opacity: 0.65,
+                            boxShadow: `0 4px 10px ${color}1f, 0 0 0 2px rgba(255,255,255,0.12)`
                         }}
                         onClick={(e) => {
                             e.stopPropagation();
@@ -226,10 +246,10 @@ const CustomNode = React.memo(({ data, selected, id }: { data: CustomNodeData; s
             </AnimatePresence>
 
             <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 text-center w-32 pointer-events-none">
-                <p className={cn("text-[11px] font-bold tracking-wide transition-colors", (selected || data.isHighlight) ? 'text-white' : 'text-zinc-500')}>
+                <p className={cn("text-[11px] font-bold tracking-wide transition-colors", (selected || data.isHighlight) ? (isLight ? 'text-slate-900' : 'text-white') : (isLight ? 'text-slate-500' : 'text-zinc-500'))}>
                     {data.label}
                 </p>
-                {data.subLabel && <p className="text-[9px] text-zinc-600 mt-0.5 font-medium">{data.subLabel}</p>}
+                {data.subLabel && <p className={cn("text-[9px] mt-0.5 font-medium", isLight ? 'text-slate-500' : 'text-zinc-600')}>{data.subLabel}</p>}
             </div>
         </div>
     );
@@ -375,32 +395,32 @@ const PropertyPanel = ({ selectedItem, onClose, onUpdateNode, onUpdateEdge, onDe
     const isLight = theme === 'light';
     const inputClass = isLight
         ? "w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-        : "w-full bg-[#050505] border border-white/20 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500";
+        : "w-full bg-[#252525] border border-[#2f2f2f] rounded-lg px-3 py-2.5 text-sm text-gray-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900";
     const textareaClass = isLight
         ? "w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 min-h-[120px]"
-        : "w-full bg-[#050505] border border-white/20 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500 min-h-[120px]";
+        : "w-full bg-[#252525] border border-[#2f2f2f] rounded-lg px-3 py-2.5 text-sm text-gray-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900 min-h-[120px]";
     return (
         <motion.div
             initial={{ width: 0, opacity: 0, x: 50 }}
             animate={{ width: 340, opacity: 1, x: 0 }}
             exit={{ width: 0, opacity: 0, x: 50 }}
             className={cn("h-full flex flex-col z-40 shadow-2xl overflow-hidden absolute right-0 top-0 bottom-0 border-l",
-                isLight ? "bg-white border-slate-200" : "bg-[#111] border-white/10")}
+                isLight ? "bg-white border-slate-200" : "bg-[#0f1115] border-[#2f2f2f]")}
         >
             <div className="w-[340px] flex flex-col h-full">
                 <div className={cn("h-14 px-5 border-b flex justify-between items-center",
-                    isLight ? "bg-slate-50 border-slate-200" : "bg-[#161616] border-white/10")}>
+                    isLight ? "bg-slate-50 border-slate-200" : "bg-[#1a1a1a] border-[#2f2f2f]")}>
                     <div className="flex items-center gap-2.5">
                         <div className={cn("p-1.5 rounded border", isLight ? "bg-blue-50 border-blue-100" : "bg-blue-500/20 border-blue-500/30")}>
                             <Settings2 size={16} className={isLight ? "text-blue-500" : "text-blue-400"} />
                         </div>
-                        <span className={cn("text-sm font-bold tracking-wide", isLight ? "text-slate-900" : "text-white")}>
+                        <span className={cn("text-sm font-bold tracking-wide", isLight ? "text-slate-900" : "text-gray-100")}>
                             {selectedItem.type === 'node' ? '节点配置' : '连线配置'}
                         </span>
                     </div>
-                    <button onClick={onClose} className={cn("p-1.5 rounded-md transition-colors", isLight ? "text-slate-600 hover:bg-slate-100" : "text-white hover:bg-white/10")}><X size={18} /></button>
+                    <button onClick={onClose} className={cn("p-1.5 rounded-md transition-colors", isLight ? "text-slate-600 hover:bg-slate-100" : "text-gray-300 hover:bg-[#2a2a2a] border border-transparent hover:border-[#3a3a3a]")}><X size={18} /></button>
                 </div>
-                <div className={cn("flex-1 overflow-y-auto p-5 space-y-8 custom-scrollbar", isLight ? "bg-white text-slate-900" : "bg-transparent text-white")}>
+                <div className={cn("flex-1 overflow-y-auto p-5 space-y-8 custom-scrollbar", isLight ? "bg-white text-slate-900" : "bg-[#0f1115] text-gray-200")}>
                     {selectedItem.type === 'node' ? (
                         <>
                             <div className="space-y-4">
@@ -412,11 +432,11 @@ const PropertyPanel = ({ selectedItem, onClose, onUpdateNode, onUpdateEdge, onDe
                                     <input value={selectedItem.data.subLabel || ''} onChange={(e) => onUpdateNode(selectedItem.id, { subLabel: e.target.value })} className={inputClass} />
                                 </InputGroup>
                             </div>
-                            <div className={cn("h-px", isLight ? "bg-slate-200" : "bg-white/10")} />
+                            <div className={cn("h-px", isLight ? "bg-slate-200" : "bg-[#2f2f2f]")} />
                             <div className="space-y-4">
                                 <SectionHeader icon={Palette} title="外观样式" isLight={isLight} />
                                 <div className="space-y-2.5">
-                                    <label className={cn("text-[11px] font-bold uppercase", isLight ? "text-slate-700" : "text-white")}>主题颜色</label>
+                                    <label className={cn("text-[11px] font-bold uppercase", isLight ? "text-slate-700" : "text-gray-200")}>主题颜色</label>
                                     <div className="flex gap-2.5 flex-wrap">
                                         {PRESET_COLORS.map(c => (
                                             <button key={c} onClick={() => onUpdateNode(selectedItem.id, { color: c })} className={cn("w-6 h-6 rounded-full transition-all relative", selectedItem.data.color === c ? (isLight ? "scale-110 ring-2 ring-slate-300" : "scale-110 ring-2 ring-white") : "opacity-80 hover:opacity-100")} style={{ backgroundColor: c }} />
@@ -424,12 +444,12 @@ const PropertyPanel = ({ selectedItem, onClose, onUpdateNode, onUpdateEdge, onDe
                                     </div>
                                 </div>
                                 <div className="space-y-2.5">
-                                    <label className={cn("text-[11px] font-bold uppercase", isLight ? "text-slate-700" : "text-white")}>图标</label>
+                                    <label className={cn("text-[11px] font-bold uppercase", isLight ? "text-slate-700" : "text-gray-200")}>图标</label>
                                     <div className="grid grid-cols-5 gap-2">
                                         {Object.keys(ICON_MAP).map(key => {
                                             const Icon = ICON_MAP[key];
                                             return (
-                                                <button key={key} onClick={() => onUpdateNode(selectedItem.id, { iconKey: key })} className={cn("aspect-square rounded-lg flex items-center justify-center transition-all border", selectedItem.data.iconKey === key ? "bg-blue-600 text-white border-blue-500" : (isLight ? "bg-white text-slate-700 hover:bg-slate-100 border-slate-200" : "bg-[#222] text-white hover:bg-[#333] border-white/10"))}><Icon size={18} /></button>
+                                                <button key={key} onClick={() => onUpdateNode(selectedItem.id, { iconKey: key })} className={cn("aspect-square rounded-lg flex items-center justify-center transition-all border", selectedItem.data.iconKey === key ? "bg-blue-600 text-white border-blue-500" : (isLight ? "bg-white text-slate-700 hover:bg-slate-100 border-slate-200" : "bg-[#252525] text-gray-200 hover:bg-[#2a2a2a] border-[#2f2f2f]"))}><Icon size={18} /></button>
                                             )
                                         })}
                                     </div>
@@ -441,32 +461,32 @@ const PropertyPanel = ({ selectedItem, onClose, onUpdateNode, onUpdateEdge, onDe
                             <div className="space-y-5">
                                 <SectionHeader icon={Activity} title="连线属性" isLight={isLight} />
                                 <div className="space-y-2.5">
-                                    <label className={cn("text-[11px] font-bold uppercase", isLight ? "text-slate-700" : "text-white")}>连线形状</label>
+                                    <label className={cn("text-[11px] font-bold uppercase", isLight ? "text-slate-700" : "text-gray-200")}>连线形状</label>
                                     <div className="grid grid-cols-2 gap-2">
                                         {[{ label: '贝塞尔曲线', value: 'bezier', icon: Spline }, { label: '圆角折线', value: 'smoothstep', icon: CornerDownRight }, { label: '直角折线', value: 'step', icon: Layout }, { label: '直线', value: 'straight', icon: Minus }].map(type => {
                                             const TypeIcon = type.icon;
                                             const isActive = selectedItem.data.pathType === type.value || (!selectedItem.data.pathType && type.value === 'bezier');
                                             return (
-                                                <button key={type.value} onClick={() => onUpdateEdge(selectedItem.id, { pathType: type.value })} className={cn("flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border", isActive ? "bg-blue-600 text-white border-blue-500" : (isLight ? "bg-white text-slate-700 hover:bg-slate-100 border-slate-200" : "bg-[#222] text-white hover:bg-[#333] border-white/10"))}><TypeIcon size={16} /> {type.label}</button>
+                                                <button key={type.value} onClick={() => onUpdateEdge(selectedItem.id, { pathType: type.value })} className={cn("flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border", isActive ? "bg-blue-600 text-white border-blue-500" : (isLight ? "bg-white text-slate-700 hover:bg-slate-100 border-slate-200" : "bg-[#252525] text-gray-200 hover:bg-[#2a2a2a] border-[#2f2f2f]"))}><TypeIcon size={16} /> {type.label}</button>
                                             )
                                         })}
                                     </div>
                                 </div>
-                                <div className={cn("p-4 rounded-xl border space-y-5", isLight ? "bg-slate-50 border-slate-200" : "bg-[#1a1a1a] border-white/10")}>
+                                <div className={cn("p-4 rounded-xl border space-y-5", isLight ? "bg-slate-50 border-slate-200" : "bg-[#1e1e1e] border-[#2f2f2f]")}>
                                     <div className="flex items-center justify-between">
-                                        <span className={cn("text-sm font-medium", isLight ? "text-slate-800" : "text-white")}>虚线样式</span>
+                                        <span className={cn("text-sm font-medium", isLight ? "text-slate-800" : "text-gray-200")}>虚线样式</span>
                                         <input type="checkbox" checked={selectedItem.data.dashed || false} onChange={(e) => onUpdateEdge(selectedItem.id, { dashed: e.target.checked })} className={cn("w-4 h-4", isLight ? "accent-blue-500" : "accent-blue-500")} />
                                     </div>
-                                    <div className={cn("space-y-3 pt-3 border-t", isLight ? "border-slate-200" : "border-white/10")}>
+                                    <div className={cn("space-y-3 pt-3 border-t", isLight ? "border-slate-200" : "border-[#2f2f2f]")}>
                                         <div className="flex justify-between text-xs">
-                                            <span className={cn("font-medium", isLight ? "text-slate-700" : "text-white")}>流动时长</span>
-                                            <span className="text-blue-500 font-mono font-bold">{selectedItem.data.speed || 2}s</span>
+                                            <span className={cn("font-medium", isLight ? "text-slate-700" : "text-gray-200")}>流动时长</span>
+                                            <span className="text-blue-400 font-mono font-bold">{selectedItem.data.speed || 2}s</span>
                                         </div>
-                                        <input type="range" min="0.5" max="5" step="0.1" value={selectedItem.data.speed || 2} onChange={(e) => onUpdateEdge(selectedItem.id, { speed: parseFloat(e.target.value) })} className={cn("w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-blue-500", isLight ? "bg-slate-200" : "bg-white/20")} />
+                                        <input type="range" min="0.5" max="5" step="0.1" value={selectedItem.data.speed || 2} onChange={(e) => onUpdateEdge(selectedItem.id, { speed: parseFloat(e.target.value) })} className={cn("w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-blue-500", isLight ? "bg-slate-200" : "bg-[#2f2f2f]")} />
                                     </div>
                                 </div>
                                 <div className="space-y-2.5">
-                                    <label className={cn("text-[11px] font-bold uppercase", isLight ? "text-slate-700" : "text-white")}>连线颜色</label>
+                                    <label className={cn("text-[11px] font-bold uppercase", isLight ? "text-slate-700" : "text-gray-200")}>连线颜色</label>
                                     <div className="flex gap-2.5 flex-wrap">
                                         {PRESET_COLORS.map(c => (
                                             <button key={c} onClick={() => onUpdateEdge(selectedItem.id, { color: c })} className={cn("w-5 h-5 rounded-full transition-all relative", selectedItem.data.color === c ? (isLight ? "scale-110 ring-2 ring-slate-300" : "scale-110 ring-2 ring-white") : "opacity-80 hover:opacity-100")} style={{ backgroundColor: c }} />
@@ -477,7 +497,7 @@ const PropertyPanel = ({ selectedItem, onClose, onUpdateNode, onUpdateEdge, onDe
                         </>
                     )}
                 </div>
-                <div className={cn("p-5 border-t mt-auto", isLight ? "bg-slate-50 border-slate-200" : "bg-[#161616] border-white/10")}>
+                <div className={cn("p-5 border-t mt-auto", isLight ? "bg-slate-50 border-slate-200" : "bg-[#1a1a1a] border-[#2f2f2f]")}>
                     <button onClick={onDelete} className={cn("w-full group flex items-center justify-center gap-2 py-3 rounded-lg transition-all border", isLight ? "bg-red-50 hover:bg-red-100 text-red-600 border-red-200" : "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20 hover:border-red-500/40")}><Trash2 size={16} className="group-hover:scale-110 transition-transform" /><span className="text-xs font-bold">删除当前{selectedItem.type === 'node' ? '节点' : '连线'}</span></button>
                 </div>
             </div>
@@ -569,7 +589,9 @@ function FlowEditorInner({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     const [selectedSelection, setSelectedSelection] = useState<{ type: 'node' | 'edge', id: string, data: any } | null>(null);
     const [selectedNodeForDetail, setSelectedNodeForDetail] = useState<{ id: string; data: CustomNodeData } | null>(null);
 
-    const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
+    const nodeTypes = useMemo(() => ({
+        custom: (props: any) => <CustomNode {...props} isLight={isLight} />
+    }), [isLight]);
     const edgeTypes = useMemo(() => ({ custom: CustomEdge }), []);
 
     const engineRef = useRef<FlowEngine | null>(null);
@@ -736,10 +758,10 @@ function FlowEditorInner({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         setEdges((eds) => addEdge({
             ...params,
             type: 'custom',
-            style: { stroke: '#fff', strokeWidth: 2 },
+            style: { stroke: isLight ? '#0f172a' : '#fff', strokeWidth: 2 },
             data: { speed: 2, isFlowing: false, dashed: false, pathType: 'bezier' }
         }, eds));
-    }, [setEdges]);
+    }, [setEdges, isLight]);
 
     const getDownstreamElements = useCallback((startNodeId: string, allNodes: Node[], allEdges: Edge[]) => {
         const visitedNodes = new Set<string>();

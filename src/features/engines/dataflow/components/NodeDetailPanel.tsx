@@ -92,57 +92,57 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
         className={
           isLight
             ? "absolute right-0 top-0 bottom-0 bg-white text-slate-900 shadow-2xl z-50 flex flex-col overflow-hidden border-l border-slate-200"
-            : "absolute right-0 top-0 bottom-0 bg-[#111] text-white shadow-2xl z-50 flex flex-col overflow-hidden border-l border-white/10"
+            : "absolute right-0 top-0 bottom-0 bg-[#0f1115] text-gray-200 shadow-2xl z-50 flex flex-col overflow-hidden border-l border-[#2f2f2f]"
         }
       >
         <div className="w-[420px] flex flex-col h-full">
           {/* 头部 */}
-          <div className={isLight ? "flex items-center justify-between p-5 bg-slate-50 border-b border-slate-200 flex-shrink-0" : "flex items-center justify-between p-5 bg-[#161616] border-b border-white/10 flex-shrink-0"}>
+          <div className={isLight ? "flex items-center justify-between p-5 bg-slate-50 border-b border-slate-200 flex-shrink-0" : "flex items-center justify-between p-5 bg-[#1a1a1a] border-b border-[#2f2f2f] flex-shrink-0"}>
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0 shadow-sm"
+                className="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0 shadow-sm border border-[#2f2f2f]"
                 style={{ backgroundColor: node.data.color }}
               >
                 <FileText className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className={isLight ? "text-base font-semibold text-slate-900 truncate" : "text-base font-semibold text-white truncate"}>
+                <h2 className={isLight ? "text-base font-semibold text-slate-900 truncate" : "text-base font-semibold text-gray-100 truncate"}>
                   {node.data.label}
                 </h2>
                 {node.data.subLabel && (
-                  <p className={isLight ? "text-xs text-slate-500 truncate mt-0.5" : "text-xs text-white/70 truncate mt-0.5"}>{node.data.subLabel}</p>
+                  <p className={isLight ? "text-xs text-slate-500 truncate mt-0.5" : "text-xs text-gray-400 truncate mt-0.5"}>{node.data.subLabel}</p>
                 )}
               </div>
             </div>
             <button
               onClick={onClose}
-              className={isLight ? "p-1.5 hover:bg-slate-100 rounded-md transition-colors flex-shrink-0" : "p-1.5 hover:bg-white/10 rounded-md transition-colors flex-shrink-0"}
+              className={isLight ? "p-1.5 hover:bg-slate-100 rounded-md transition-colors flex-shrink-0" : "p-1.5 hover:bg-[#2a2a2a] rounded-md transition-colors flex-shrink-0 border border-transparent hover:border-[#3a3a3a]"}
             >
-              <X className={isLight ? "w-4 h-4 text-slate-500" : "w-4 h-4 text-white/80"} />
+              <X className={isLight ? "w-4 h-4 text-slate-500" : "w-4 h-4 text-gray-300"} />
             </button>
           </div>
 
           {/* 内容区 */}
-          <div className={isLight ? "flex-1 overflow-y-auto p-4 space-y-3 bg-white text-slate-900" : "flex-1 overflow-y-auto p-4 space-y-3 bg-[#0d0d0d] text-white"}>
+          <div className={isLight ? "flex-1 overflow-y-auto p-4 space-y-3 bg-white text-slate-900" : "flex-1 overflow-y-auto p-4 space-y-3 bg-[#0f1115] text-gray-200"}>
             {/* 节点说明 */}
-            <div className={isLight ? "bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden" : "bg-[#151515] rounded-lg border border-white/10 overflow-hidden"}>
+            <div className={isLight ? "bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden" : "bg-[#1e1e1e] rounded-lg border border-[#2f2f2f] overflow-hidden"}>
               <button
                 onClick={() => toggleSection('description')}
-                className={isLight ? "w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors" : "w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"}
+                className={isLight ? "w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors" : "w-full flex items-center justify-between px-4 py-3 hover:bg-[#2a2a2a] transition-colors"}
               >
                 <div className="flex items-center gap-2">
                   <FileText className={isLight ? "w-4 h-4 text-blue-600" : "w-4 h-4 text-blue-400"} />
-                  <span className={isLight ? "font-medium text-sm text-slate-800" : "font-medium text-sm text-white"}>节点说明</span>
+                  <span className={isLight ? "font-medium text-sm text-slate-800" : "font-medium text-sm text-gray-100"}>节点说明</span>
                 </div>
                 {expandedSections.description ? (
-                  <ChevronDown className={isLight ? "w-4 h-4 text-slate-400" : "w-4 h-4 text-white/60"} />
+                  <ChevronDown className={isLight ? "w-4 h-4 text-slate-400" : "w-4 h-4 text-gray-400"} />
                 ) : (
-                  <ChevronRight className={isLight ? "w-4 h-4 text-slate-400" : "w-4 h-4 text-white/60"} />
+                  <ChevronRight className={isLight ? "w-4 h-4 text-slate-400" : "w-4 h-4 text-gray-400"} />
                 )}
               </button>
 
               {expandedSections.description && (
-                <div className={isLight ? "px-4 py-3 border-t border-slate-100 bg-slate-50" : "px-4 py-3 border-t border-white/5 bg-[#101010]"}>
+                <div className={isLight ? "px-4 py-3 border-t border-slate-100 bg-slate-50" : "px-4 py-3 border-t border-[#2f2f2f] bg-[#252525]"}>
                   {editingDescription ? (
                     <div className="space-y-3">
                       <textarea
@@ -185,7 +185,7 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
                         </div>
                       ) : (
                         <div className="text-center py-6">
-                          <p className={isLight ? "text-sm text-slate-400 mb-3" : "text-sm text-white/50 mb-3"}>暂无说明</p>
+                          <p className={isLight ? "text-sm text-slate-400 mb-3" : "text-sm text-gray-400 mb-3"}>暂无说明</p>
                           {isEditMode && (
                             <button
                               onClick={handleStartEditDescription}
@@ -204,14 +204,14 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
             </div>
 
             {/* 关联记录 */}
-            <div className={isLight ? "bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden" : "bg-[#151515] rounded-lg border border-white/10 overflow-hidden"}>
+            <div className={isLight ? "bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden" : "bg-[#1e1e1e] rounded-lg border border-[#2f2f2f] overflow-hidden"}>
               <button
                 onClick={() => toggleSection('records')}
-                className={isLight ? "w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors" : "w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"}
+                className={isLight ? "w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors" : "w-full flex items-center justify-between px-4 py-3 hover:bg-[#2a2a2a] transition-colors"}
               >
                 <div className="flex items-center gap-2">
                   <Database className={isLight ? "w-4 h-4 text-green-600" : "w-4 h-4 text-green-400"} />
-                  <span className={isLight ? "font-medium text-sm text-slate-800" : "font-medium text-sm text-white"}>关联数据记录</span>
+                  <span className={isLight ? "font-medium text-sm text-slate-800" : "font-medium text-sm text-gray-100"}>关联数据记录</span>
                   {node.data.linkedRecords && node.data.linkedRecords.length > 0 && (
                     <span className={isLight ? "px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium" : "px-2 py-0.5 bg-green-500/20 text-green-200 text-xs rounded-full font-medium"}>
                       {node.data.linkedRecords.length}
@@ -226,13 +226,13 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
               </button>
 
               {expandedSections.records && (
-                <div className={isLight ? "px-4 py-3 border-t border-slate-100 bg-slate-50 space-y-2" : "px-4 py-3 border-t border-white/5 bg-[#101010] space-y-2"}>
+                <div className={isLight ? "px-4 py-3 border-t border-slate-100 bg-slate-50 space-y-2" : "px-4 py-3 border-t border-[#2f2f2f] bg-[#111111] space-y-2"}>
                   {node.data.linkedRecords && node.data.linkedRecords.length > 0 ? (
                     <div className="space-y-2">
                       {node.data.linkedRecords.map((record) => (
                         <div
                           key={`${record.documentId}-${record.recordId}`}
-                          className={isLight ? "bg-white p-3 rounded-md border border-slate-200 hover:border-green-300 hover:shadow-sm transition-all" : "bg-[#0f0f0f] p-3 rounded-md border border-white/10 hover:border-green-400/60 hover:shadow-lg hover:shadow-green-500/10 transition-all"}
+                          className={isLight ? "bg-white p-3 rounded-md border border-slate-200 hover:border-green-300 hover:shadow-sm transition-all" : "bg-[#252525] p-3 rounded-md border border-[#2f2f2f] hover:border-green-400/50 hover:shadow-lg hover:shadow-green-500/10 transition-all"}
                         >
                           <div className="flex items-start gap-2">
                             <div className="flex-1 min-w-0">
@@ -243,10 +243,13 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
                                 </span>
                               </div>
                               <div className="space-y-1.5">
-                                {Object.entries(record.recordData).slice(0, 2).map(([key, value]) => (
+                                {Object.entries(record.recordData)
+                                  .filter(([key]) => !(key === 'id' || key === '_id' || key === 'recordId'))
+                                  .slice(0, 2)
+                                  .map(([key, value]) => (
                                   <div key={key} className="text-xs">
-                                    <span className={isLight ? "text-slate-500" : "text-white/60"}>{key}:</span>{' '}
-                                    <span className={isLight ? "text-slate-800 font-medium" : "text-white font-medium"}>
+                                    <span className={isLight ? "text-slate-500" : "text-gray-400"}>{key}:</span>{' '}
+                                    <span className={isLight ? "text-slate-800 font-medium" : "text-gray-100 font-medium"}>
                                       {typeof value === 'object' 
                                         ? JSON.stringify(value).substring(0, 40) + '...'
                                         : String(value).substring(0, 40)
@@ -255,10 +258,10 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
                                   </div>
                                 ))}
                               </div>
-                              <div className={isLight ? "flex items-center gap-3 mt-3 pt-2 border-t border-slate-100" : "flex items-center gap-3 mt-3 pt-2 border-t border-white/10"}>
+                              <div className={isLight ? "flex items-center gap-3 mt-3 pt-2 border-t border-slate-100" : "flex items-center gap-3 mt-3 pt-2 border-t border-[#2f2f2f]"}>
                                 <button
                                   onClick={() => setViewingRecord(record)}
-                                  className={isLight ? "text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium" : "text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium"}
+                                  className={isLight ? "text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium" : "text-xs text-blue-300 hover:text-blue-200 flex items-center gap-1 font-medium"}
                                 >
                                   <Eye className="w-3.5 h-3.5" />
                                   查看

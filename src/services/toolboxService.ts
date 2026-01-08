@@ -1,5 +1,6 @@
 // Toolbox 数据文档服务
 import type { ToolboxDocument, ToolboxRecord } from '@/types/dataflow'
+import { apiFetch, ensureAuth } from '@/lib/apiClient'
 import { getAuthToken } from './authService'
 
 // 开发环境使用相对路径通过 Vite 代理，生产环境使用环境变量
@@ -48,11 +49,14 @@ export const toolboxService = {
    */
   async listDocuments(): Promise<ToolboxDocument[]> {
     try {
-      const response = await fetch(`${TOOLBOX_BASE_URL}${API_PREFIX}/km/data-documents?pageSize=1000`, {
-        method: 'GET',
-        headers: getHeaders(),
-        credentials: 'include', // 携带 cookie 用于权限验证
-      })
+      const response = await apiFetch(
+        `${TOOLBOX_BASE_URL}${API_PREFIX}/km/data-documents?pageSize=1000`,
+        {
+          method: 'GET',
+          headers: getHeaders(),
+          credentials: 'include', // 携带 cookie 用于权限验证
+        }
+      )
       
       if (!response.ok) {
         console.error('Failed to fetch documents, status:', response.status)
@@ -60,6 +64,7 @@ export const toolboxService = {
       }
       
       const data = await response.json()
+      ensureAuth(data)
       // 后端返回格式: { total, rows } 或 { documents }
       const documents = data.rows || data.documents || []
       
@@ -89,11 +94,14 @@ export const toolboxService = {
       }
 
       console.log(`从服务器获取文档: ${id}`)
-      const response = await fetch(`${TOOLBOX_BASE_URL}${API_PREFIX}/km/data-documents/${id}`, {
-        method: 'GET',
-        headers: getHeaders(),
-        credentials: 'include',
-      })
+      const response = await apiFetch(
+        `${TOOLBOX_BASE_URL}${API_PREFIX}/km/data-documents/${id}`,
+        {
+          method: 'GET',
+          headers: getHeaders(),
+          credentials: 'include',
+        }
+      )
       
       if (!response.ok) {
         console.error('Failed to fetch document, status:', response.status)
@@ -101,6 +109,7 @@ export const toolboxService = {
       }
       
       const document = await response.json()
+      ensureAuth(document)
       const result = {
         ...document,
         recordCount: Array.isArray(document.data) ? document.data.length : 0,
@@ -135,7 +144,7 @@ export const toolboxService = {
       const url = `${TOOLBOX_BASE_URL}${API_PREFIX}/km/data-documents/${id}/records?${queryParams}`
       console.log(`获取记录: ${url}`)
       
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: 'GET',
         headers: getHeaders(),
         credentials: 'include',
@@ -147,6 +156,7 @@ export const toolboxService = {
       }
       
       const data = await response.json()
+      ensureAuth(data)
       console.log('后端返回数据:', data)
       
       // 后端返回格式: { total, rows: [{id, documentId, data: {...}}], code, msg }
@@ -172,11 +182,14 @@ export const toolboxService = {
    */
   async searchDocuments(query: string): Promise<ToolboxDocument[]> {
     try {
-      const response = await fetch(`${TOOLBOX_BASE_URL}${API_PREFIX}/km/data-documents?search=${encodeURIComponent(query)}&pageSize=100`, {
-        method: 'GET',
-        headers: getHeaders(),
-        credentials: 'include',
-      })
+      const response = await apiFetch(
+        `${TOOLBOX_BASE_URL}${API_PREFIX}/km/data-documents?search=${encodeURIComponent(query)}&pageSize=100`,
+        {
+          method: 'GET',
+          headers: getHeaders(),
+          credentials: 'include',
+        }
+      )
       
       if (!response.ok) {
         console.error('Failed to search documents, status:', response.status)
@@ -184,6 +197,7 @@ export const toolboxService = {
       }
       
       const data = await response.json()
+      ensureAuth(data)
       // 后端返回格式: { total, rows } 或 { documents }
       const documents = data.rows || data.documents || []
       
